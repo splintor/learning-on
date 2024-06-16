@@ -9,11 +9,13 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@googleapis/sheets": "^8.0.0",
     "@remix-run/node": "^2.9.2",
     "@remix-run/react": "^2.9.2",
     "@remix-run/server-runtime": "^2.9.2",
     "@vercel/analytics": "^1.2.2",
     "@vercel/remix": "2.9.2-patch.2",
+    "google-auth-library": "^9.11.0",
     "isbot": "^4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
