@@ -18,7 +18,9 @@
     "google-auth-library": "^9.11.0",
     "isbot": "^4",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "remix-auth": "^3.7.0",
+    "remix-auth-socials": "^2.0.6"
   },
   "devDependencies": {
     "@remix-run/dev": "^2.9.2",

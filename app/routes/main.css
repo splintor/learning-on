@@ -1,0 +1,14 @@
+h1, h2, h3 {
+  text-align: center;
+}
+
+h2 {
+  color: blue;
+}
+
+h2 button {
+  font-size: 1.1em;
+  margin-top: 25px;
+  border-radius: 15px;
+  padding: 15px;
+}
