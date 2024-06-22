@@ -37,7 +37,7 @@ export async function loader({ request }: { request: Request }) {
   const myStudents = data.students.filter(student => !student.teacher || myTeachers.some(t => t.name === student.teacher));
   myStudents.forEach(s => {
     if (s.teacher) {
-      const teacher = myTeachers.find(t => t.name = s.teacher);
+      const teacher = myTeachers.find(t => t.name === s.teacher);
       if (teacher) {
         teacher.student = s.name;
       }
@@ -195,7 +195,8 @@ export default function Index() {
 
         {matchingStudents.length > 0 && <div className="students-section">
           <div className="students-header">
-            רשימת תלמידים שרלוונטיים ל<span>{selectedTeacher?.name}</span>:
+            {matchingStudents[0].teacher ? 'תלמידים שמשובצים ל' : 'תלמידים שרלוונטיים לשיבוץ ל'}
+            <span>{selectedTeacher?.name}</span>
           </div>
           <div className="students swipe-list">{
             matchingStudents.map(s => (
