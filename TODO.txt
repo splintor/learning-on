@@ -1,5 +1,4 @@
 1. Teachers list
-3. Add students fields
-4. About (with Logout button) screen
-5. Assign button
-6. Separate students fetcher and teachers fetcher
+2. Add students fields
+3. About (with Logout button) screen
+4. Show toast after assign (with cancel option)

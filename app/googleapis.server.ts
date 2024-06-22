@@ -20,7 +20,7 @@ function getGoogleSheets() {
 
 type Sheets = ReturnType<typeof getGoogleSheets>;
 
-const fixPhone = (phone: string | undefined) => phone ? phone.match(/^[+0]/) ? phone : '0' + phone : '';
+const fixPhone = (phone: string | undefined) => phone?.replace(/[^\d+-]/g, '').replace(/^([1-9])/, '0$1') ?? '';
 
 function parseDate(dmy: string | undefined) {
   if (!dmy) {
@@ -121,6 +121,21 @@ export async function assignTeacher({ teacherIndex, assignValue }: { teacherInde
     });
   } catch (err) {
     console.error('Failed to assign teacher', err);
+    throw err;
+  }
+}
+
+export async function assignStudent({ studentIndex, assignValue }: { studentIndex: number, assignValue: string }) {
+  try {
+    const sheets = getGoogleSheets();
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${studentsSheetName}!O${studentIndex + 2}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [[assignValue]] },
+    });
+  } catch (err) {
+    console.error('Failed to assign student', err);
     throw err;
   }
 }

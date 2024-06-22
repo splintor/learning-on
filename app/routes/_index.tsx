@@ -1,6 +1,6 @@
 import type { LinksFunction, MetaFunction } from '@vercel/remix';
 import { Form, useFetcher, useLoaderData } from '@remix-run/react';
-import { assignTeacher, getData, type Student, type Teacher } from '~/googleapis.server';
+import { assignStudent, assignTeacher, getData, type Student, type Teacher } from '~/googleapis.server';
 import { SocialsProvider } from 'remix-auth-socials';
 import { authenticator } from '~/auth.server';
 import styles from "./main.css?url";
@@ -52,12 +52,16 @@ export async function loader({ request }: { request: Request }) {
   };
 }
 
-// noinspection JSUnusedGlobalSymbols
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const teacherIndex = Number(formData.get('teacherIndex'));
+  const studentIndex = Number(formData.get('studentIndex'));
   const assignValue = String(formData.get('assignValue'));
-  await assignTeacher({ teacherIndex, assignValue });
+  if (teacherIndex) {
+    await assignTeacher({ teacherIndex, assignValue });
+  } else {
+    await assignStudent({ studentIndex, assignValue })
+  }
   return null;
 }
 
@@ -93,24 +97,27 @@ function studentMatchForTeacher(student: Student, teacher: Teacher) {
 }
 
 export default function Index() {
-  const fetcher = useFetcher({ key: "assign-teacher" });
-  const isIdleFetcher = fetcher.state === 'idle';
+  const teacherFetcher = useFetcher({ key: "assign-teacher" });
+  const isTeacherFetcherIdle = teacherFetcher.state === 'idle';
+  const studentFetcher = useFetcher({ key: "assign-student" });
+  const isStudentFetcherIdle = studentFetcher.state === 'idle';
   const { myStudents, myTeachers, user } = useLoaderData<typeof loader>();
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher>();
   const [includeAssigned, toggleIncludeAssigned] = useReducer((state) => !state, false);
   const teachers = myTeachers && !includeAssigned ? myTeachers.filter(t => !isTeacherAssigned(t)) : myTeachers;
   const [matchingStudents, setMatchingStudents] = useState<Student[]>([]);
   const selectedTeacherRef = useRef<HTMLDivElement>(null);
+  const studentsSwipeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (selectedTeacher && !teachers.includes(selectedTeacher)) {
-      setSelectedTeacher(undefined);
+    if (selectedTeacher) {
+      setSelectedTeacher(teachers.find(t => t.name === selectedTeacher.name));
     }
   }, [selectedTeacher, teachers]);
 
   useEffect(() => {
     if (selectedTeacher && selectedTeacherRef.current) {
-      selectedTeacherRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+      setTimeout(() => selectedTeacherRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' }));
     }
   }, [selectedTeacher]);
 
@@ -122,10 +129,9 @@ export default function Index() {
       if (assignedStudents.length) {
         setMatchingStudents(assignedStudents);
       } else {
-        const bestMatchingStudents = myStudents.map(student => ({
-          student,
-          match: studentMatchForTeacher(student, selectedTeacher),
-        }))
+        const bestMatchingStudents = myStudents
+          .filter(s => !s.teacher)
+          .map(s => ({ student: s, match: studentMatchForTeacher(s, selectedTeacher)}))
           .sort((s1, s2) => s2.match - s1.match)
           .slice(0, 50)
           .map(({ student }) => student);
@@ -134,16 +140,22 @@ export default function Index() {
     }
   }, [selectedTeacher, myStudents]);
 
+  useEffect(() => {
+    if (studentsSwipeRef.current) {
+      studentsSwipeRef.current.scrollLeft = 0;
+    }
+  }, [selectedTeacher?.name]);
+
   function assignTeacher(e: MouseEvent, t: Teacher, assignValue: string) {
     e.stopPropagation();
     e.preventDefault();
-    fetcher.submit({ teacherIndex: t.index, assignValue }, { method: 'POST' });
+    teacherFetcher.submit({ teacherIndex: t.index, assignValue }, { method: 'POST' });
   }
 
   function assignStudent(e: MouseEvent, s: Student, assignValue: string) {
     e.stopPropagation();
     e.preventDefault();
-    fetcher.submit({ teacherIndex: s.index, assignValue }, { method: 'POST' });
+    studentFetcher.submit({ studentIndex: s.index, assignValue }, { method: 'POST' });
   }
 
   return (
@@ -184,7 +196,7 @@ export default function Index() {
                   {!isTeacherAssigned(t) &&
                      <div className="leftBottom">
                        <div className="status">{isTeacherAvailable(t) ? 'זמין' : 'לא זמין'}</div>
-                       {isIdleFetcher ? isTeacherAvailable(t)
+                       {isTeacherFetcherIdle ? isTeacherAvailable(t)
                            ? <a href={'#markAsAvailable'} onClick={(e) => assignTeacher(e, t, '')}>סמן כלא
                              זמין</a>
                            : <a href={'#markAsUnavailable'} onClick={(e) => assignTeacher(e, t, Available)}>סמן
@@ -207,7 +219,7 @@ export default function Index() {
             {matchingStudents[0].teacher ? 'תלמידים שמשובצים ל' : 'תלמידים שרלוונטיים לשיבוץ ל'}
             <span>{selectedTeacher?.name}</span>
           </div>
-          <div className="students swipe-list">{
+          <div className="students swipe-list" ref={studentsSwipeRef}>{
             matchingStudents.map(s => (
               <div key={s.index} className={getStudentClass(s)}>
                 <div className="right">
@@ -230,14 +242,22 @@ export default function Index() {
                       {formatJoinDate(s)}
                     </div>}
                   </div>
+
                   <div className="leftBottom">
-                    {!isIdleFetcher && <div>מעדכן...</div>}
-                    {isIdleFetcher && isStudentAvailable(s) &&
-                       <a href={'#markAsAvailable'} onClick={(e) => assignStudent(e, s, '')}>סמן כלא
-                         זמין</a>}
-                    {isIdleFetcher && isStudentUnavailable(s) &&
-                       <a href={'#markAsUnavailable'} onClick={(e) => assignStudent(e, s, Available)}>סמן
-                         כזמין</a>}
+                    <div
+                      className="status">{isStudentAssigned(s) ? `משובץ ל${s.teacher}` : isStudentAvailable(s) ? 'זמין' : 'לא זמין'}</div>
+                    {isStudentFetcherIdle ? <div>
+                      {!isStudentAssigned(s) && <div>{isStudentAvailable(s) ?
+                        <a href={'#markAsAvailable'} onClick={(e) => assignStudent(e, s, '')}>סמן כלא
+                          זמין</a> :
+                        <a href={'#markAsUnavailable'} onClick={(e) => assignStudent(e, s, Available)}>סמן
+                          כזמין</a>}</div>}
+                      <div>{isStudentAssigned(s) ?
+                        <a href={'#unassignStudent'} onClick={(e) => assignStudent(e, s, '')}>בטל שיבוץ
+                          ל{s.teacher}</a> :
+                        <a href={'#assignStudent'} onClick={(e) => assignStudent(e, s, selectedTeacher!.name)}>שבץ
+                          ל{selectedTeacher?.name}</a>}</div>
+                    </div> : <div>מעדכן...</div>}
                   </div>
                 </div>
               </div>
