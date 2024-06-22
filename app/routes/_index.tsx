@@ -5,6 +5,8 @@ import { SocialsProvider } from 'remix-auth-socials';
 import { authenticator } from '~/auth.server';
 import styles from "./main.css?url";
 import { useReducer, useState, type MouseEvent, useEffect, useRef } from 'react';
+import { ToastContainer, Zoom, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // noinspection JSUnusedGlobalSymbols
 export const links: LinksFunction = () => [
@@ -108,6 +110,7 @@ export default function Index() {
   const [matchingStudents, setMatchingStudents] = useState<Student[]>([]);
   const selectedTeacherRef = useRef<HTMLDivElement>(null);
   const studentsSwipeRef = useRef<HTMLDivElement>(null);
+  const [studentAssignToast, setStudentAssignToast] = useState<JSX.Element>();
 
   useEffect(() => {
     if (selectedTeacher) {
@@ -120,6 +123,13 @@ export default function Index() {
       setTimeout(() => selectedTeacherRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' }));
     }
   }, [selectedTeacher]);
+
+  useEffect(() => {
+    if (isTeacherFetcherIdle && studentAssignToast) {
+      toast.success(studentAssignToast);
+      setStudentAssignToast(undefined);
+    }
+  }, [studentAssignToast, isTeacherFetcherIdle])
 
   useEffect(() => {
     if (!selectedTeacher) {
@@ -156,6 +166,13 @@ export default function Index() {
     e.stopPropagation();
     e.preventDefault();
     studentFetcher.submit({ studentIndex: s.index, assignValue }, { method: 'POST' });
+
+    const origValue = s.teacher;
+    const cancelFn = () => assignStudent(e, s, origValue);
+    setStudentAssignToast(isStudentAssigned(s)
+      ? <div className="toast">השיבוץ של {s.name} ל{selectedTeacher?.name} בוטל בהצלחה. <a href={'#re-assign'} onClick={cancelFn}>שבץ מחדש</a></div>
+      : <div className="toast">{s.name} שובץ בהצלחה ל{selectedTeacher?.name}<a href={'#re-assign'} onClick={cancelFn}>בטל</a></div>);
+    s.teacher = assignValue;
   }
 
   return (
@@ -287,6 +304,19 @@ export default function Index() {
             <button>כניסה</button>
           </h2>
         </Form>}
+        <ToastContainer
+          position="bottom-center"
+          autoClose={50000}
+          hideProgressBar
+          newestOnTop={false}
+          closeOnClick
+          rtl
+          pauseOnFocusLoss
+          draggable={false}
+          pauseOnHover
+          theme="light"
+          transition={Zoom}
+        />
       </div> : <h2 className="loader">טוען נתונים...</h2>}
     </div>
   );

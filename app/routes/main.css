@@ -141,6 +141,14 @@ h2 button {
   }
 }
 
+.toast {
+  display: grid;
+
+  & a {
+    text-align: end;
+  }
+}
+
 .loader {
   color: blue;
 }
