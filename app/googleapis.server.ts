@@ -20,14 +20,75 @@ function getGoogleSheets() {
 
 type Sheets = ReturnType<typeof getGoogleSheets>;
 
+const fixPhone = (phone: string | undefined) => phone ? phone.match(/^[+0]/) ? phone : '0' + phone : '';
+
+function parseDate(dmy: string | undefined) {
+  const parts = dmy?.split('/').map(Number);
+  return parts && new Date(parts[2], parts[1] - 1, parts[0]);
+}
+
+export type Student = {
+  index: number;
+  name: string;
+  city: string;
+  grade: string;
+  subjects: string;
+  phone: string;
+  teacher: string;
+  details: string;
+  hours: string;
+  comment: string;
+  joinDate: Date | undefined;
+}
+
+export type Teacher = {
+  index: number;
+  name: string;
+  phone: string;
+  subjects: string;
+  hours: string;
+  background: string;
+  comment: string;
+  joinDate: Date | undefined;
+  student: string;
+  coordinator: string | undefined;
+}
+
 export async function getData() {
   try {
     const sheets = getGoogleSheets();
-    const [students, teachers, coordinators] = await Promise.all([
-      getValues(sheets,  `${studentsSheetName}!A:U`),
-      getValues(sheets, `${teachersSheetName}!A:Z`),
-      getValues(sheets, `${coordinatorsSheetName}!A:A`),
+    const [studentRows, teacherRows, coordinators] = await Promise.all([
+      getValues(sheets, `${studentsSheetName}!A2:U`),
+      getValues(sheets, `${teachersSheetName}!A2:AC`),
+      getValues(sheets, `${coordinatorsSheetName}!A2:B`),
     ]);
+
+    const students = studentRows?.map<Student>((row, index) => ({
+      index,
+      name: row[0],
+      city: row[1],
+      grade: row[2] || '',
+      subjects: row[12] || '',
+      phone: fixPhone(row[13]),
+      teacher: row[14],
+      details: row[16],
+      hours: row[17],
+      comment: row[19],
+      joinDate: parseDate(row[20]),
+    })).filter(s => !s.teacher) ?? [];
+
+    const teachers = teacherRows?.map<Teacher>((row, index) => ({
+      index,
+      name: row[0],
+      phone: fixPhone(row[1]),
+      subjects: row[15]?.replace(/\\ [A-Z]*/ig, '') || '',
+      hours: row[19],
+      background: row[20],
+      comment: row[22],
+      joinDate: parseDate(row[25]),
+      student: row[27],
+      coordinator: row[28],
+    }));
 
     return { students, teachers, coordinators };
   } catch (err) {
@@ -45,6 +106,20 @@ async function getValues(sheets: Sheets, range: string) {
   }
 }
 
+export async function assignTeacher({ teacherIndex, assignValue }: { teacherIndex: number, assignValue: string }) {
+  try {
+    const sheets = getGoogleSheets();
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${teachersSheetName}!AB${teacherIndex + 2}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [[assignValue]] },
+    });
+  } catch (err) {
+    console.error('Failed to assign teacher', err);
+    throw err;
+  }
+}
 
 // export async function saveForm({ senderName, fadiha = 'לא', names = [], sum }: Record<string, string | string[]>) {
 //   try {
