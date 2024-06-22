@@ -38,7 +38,7 @@ h2 button {
   }
 }
 
-.teachers {
+.swipe-list {
   display: inline-flex;
   max-width: 100vw;
   overflow-x: scroll;
@@ -46,7 +46,7 @@ h2 button {
   scrollbar-width: none;  /* Firefox */
 }
 
-.teachers > div {
+.swipe-list > div {
   display: flex;
   justify-content: space-between;
   height: 220px;

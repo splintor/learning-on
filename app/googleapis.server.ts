@@ -23,8 +23,11 @@ type Sheets = ReturnType<typeof getGoogleSheets>;
 const fixPhone = (phone: string | undefined) => phone ? phone.match(/^[+0]/) ? phone : '0' + phone : '';
 
 function parseDate(dmy: string | undefined) {
-  const parts = dmy?.split('/').map(Number);
-  return parts && new Date(parts[2], parts[1] - 1, parts[0]);
+  if (!dmy) {
+    return '';
+  }
+  const parts = dmy.split('/').map(Number);
+  return new Date(parts[2], parts[1] - 1, parts[0]).toISOString();
 }
 
 export type Student = {
@@ -38,7 +41,7 @@ export type Student = {
   details: string;
   hours: string;
   comment: string;
-  joinDate: Date | undefined;
+  joinDate: string;
 }
 
 export type Teacher = {
@@ -49,9 +52,9 @@ export type Teacher = {
   hours: string;
   background: string;
   comment: string;
-  joinDate: Date | undefined;
+  joinDate: string;
   student: string;
-  coordinator: string | undefined;
+  coordinator: string;
 }
 
 export async function getData() {
@@ -75,7 +78,7 @@ export async function getData() {
       hours: row[17],
       comment: row[19],
       joinDate: parseDate(row[20]),
-    })).filter(s => !s.teacher) ?? [];
+    })) ?? [];
 
     const teachers = teacherRows?.map<Teacher>((row, index) => ({
       index,

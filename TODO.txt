@@ -1,0 +1,6 @@
+1. Teachers list
+2. BUG: When filtering assigned teachers, unselect teacher if it is assigned
+3. Add students fields
+4. About (with Logout button) screen
+5. Assign button
+6. Separate students fetcher and teachers fetcher
