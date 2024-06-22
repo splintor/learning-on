@@ -54,6 +54,7 @@ export async function loader({ request }: { request: Request }) {
   };
 }
 
+// noinspection JSUnusedGlobalSymbols
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const teacherIndex = Number(formData.get('teacherIndex'));
@@ -169,9 +170,11 @@ export default function Index() {
 
     const origValue = s.teacher;
     const cancelFn = () => assignStudent(e, s, origValue);
-    setStudentAssignToast(isStudentAssigned(s)
-      ? <div className="toast">השיבוץ של {s.name} ל{selectedTeacher?.name} בוטל בהצלחה. <a href={'#re-assign'} onClick={cancelFn}>שבץ מחדש</a></div>
-      : <div className="toast">{s.name} שובץ בהצלחה ל{selectedTeacher?.name}<a href={'#re-assign'} onClick={cancelFn}>בטל</a></div>);
+    if (isStudentAssigned(s)) {
+      setStudentAssignToast(<div className="toast">השיבוץ של {s.name} ל{selectedTeacher?.name} בוטל בהצלחה. <a href={'#re-assign'} onClick={cancelFn}>שבץ מחדש</a></div>);
+    } else if(assignValue !== Available) {
+      setStudentAssignToast(<div className="toast">{s.name} שובץ בהצלחה ל{selectedTeacher?.name}<a href={'#re-assign'} onClick={cancelFn}>בטל</a></div>);
+    }
     s.teacher = assignValue;
   }
 
@@ -306,7 +309,7 @@ export default function Index() {
         </Form>}
         <ToastContainer
           position="bottom-center"
-          autoClose={50000}
+          autoClose={7000}
           hideProgressBar
           newestOnTop={false}
           closeOnClick
