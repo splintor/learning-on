@@ -53,7 +53,8 @@ export type Teacher = {
   background: string;
   comment: string;
   joinDate: string;
-  student: string;
+  status: string;
+  student?: string;
   coordinator: string;
 }
 
@@ -89,7 +90,7 @@ export async function getData() {
       background: row[20],
       comment: row[22],
       joinDate: parseDate(row[25]),
-      student: row[27],
+      status: row[27],
       coordinator: row[28],
     }));
 

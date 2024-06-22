@@ -21,16 +21,34 @@ export const meta: MetaFunction = () => {
 
 export async function loader({ request }: { request: Request }) {
   const user = await authenticator.isAuthenticated(request);
-  const data = await getData();
   const userEmail = user?._json.email;
+  if (!userEmail) {
+    return {
+      user,
+      userEmail,
+      myTeachers: [] as Teacher[],
+      myStudents: [] as Student[],
+    }
+  }
+
+  const data = await getData();
   const userName = data.coordinators?.find(c => c[1] === userEmail)?.[0];
-  const myTeachers = userName ? data.teachers?.filter(teacher => teacher.coordinator === userName) : [];
+  const myTeachers = userName && data.teachers ? data.teachers.filter(teacher => teacher.coordinator === userName) : [];
+  const myStudents = data.students.filter(student => !student.teacher || myTeachers.some(t => t.name === student.teacher));
+  myStudents.forEach(s => {
+    if (s.teacher) {
+      const teacher = myTeachers.find(t => t.name = s.teacher);
+      if (teacher) {
+        teacher.student = s.name;
+      }
+    }
+  });
 
   return {
     user,
     userEmail,
     myTeachers,
-    students: data.students,
+    myStudents,
   };
 }
 
@@ -45,9 +63,9 @@ export async function action({ request }: { request: Request }) {
 
 const Available = 'זמין';
 
-const isTeacherAvailable = (t: Teacher) => t.student === Available;
-const isTeacherUnavailable = (t: Teacher) => !t.student;
-const isTeacherAssigned = (t: Teacher) => !isTeacherAvailable(t) && !isTeacherUnavailable(t)
+const isTeacherAvailable = (t: Teacher) => t.status === Available;
+const isTeacherUnavailable = (t: Teacher) => !t.status;
+const isTeacherAssigned = (t: Teacher) => Boolean(t.student);
 const getTeacherWhatsappMsg = (t: Teacher) => `שלום ${t.name}, האם אפשר לשבץ אליך תלמידים לשיעורים פרטיים?`;
 const getTeacherClass = (t: Teacher, selectedTeacher: Teacher | undefined) => [t === selectedTeacher ? 'selected' : '', isTeacherAssigned(t) ? 'assigned' : isTeacherAvailable(t) ? 'available': ''].join(' ');
 
@@ -78,7 +96,7 @@ function studentMatchForTeacher(student: Student, teacher: Teacher) {
 export default function Index() {
   const fetcher = useFetcher({ key: "assign-teacher" });
   const isIdleFetcher = fetcher.state === 'idle';
-  const { students, myTeachers, user } = useLoaderData<typeof loader>();
+  const { myStudents, myTeachers, user } = useLoaderData<typeof loader>();
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher>();
   const [selectedStudent, setSelectedStudent] = useState<Student>();
   const [includeAssigned, toggleIncludeAssigned] = useReducer((state) => !state, false);
@@ -89,20 +107,18 @@ export default function Index() {
     if (!selectedTeacher) {
       setMatchingStudents([]);
     } else {
-      const assignedStudents = students.filter(s => s.teacher === selectedTeacher.name);
-      console.log('DDD assignedStudents', assignedStudents);
-      console.log('DDD students', students.map(s => s.teacher));
+      const assignedStudents = myStudents.filter(s => s.teacher === selectedTeacher.name);
       if (assignedStudents.length) {
         setMatchingStudents(assignedStudents);
       } else {
-        const bestMatchingStudents = students.map(student => ({ student, match: studentMatchForTeacher(student, selectedTeacher) }))
+        const bestMatchingStudents = myStudents.map(student => ({ student, match: studentMatchForTeacher(student, selectedTeacher) }))
           .sort((s1, s2) => s2.match - s1.match)
           .slice(0, 50)
           .map(({ student }) => student);
         setMatchingStudents(bestMatchingStudents);
       }
     }
-  }, [selectedTeacher, students])
+  }, [selectedTeacher, myStudents])
 
   function assignTeacher(e: MouseEvent, t: Teacher, assignValue: string) {
     e.stopPropagation();
