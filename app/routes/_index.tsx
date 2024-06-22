@@ -64,7 +64,6 @@ export async function action({ request }: { request: Request }) {
 const Available = 'זמין';
 
 const isTeacherAvailable = (t: Teacher) => t.status === Available;
-const isTeacherUnavailable = (t: Teacher) => !t.status;
 const isTeacherAssigned = (t: Teacher) => Boolean(t.student);
 const getTeacherWhatsappMsg = (t: Teacher) => `שלום ${t.name}, האם אפשר לשבץ אליך תלמידים לשיעורים פרטיים?`;
 const getTeacherClass = (t: Teacher, selectedTeacher: Teacher | undefined) => [t === selectedTeacher ? 'selected' : '', isTeacherAssigned(t) ? 'assigned' : isTeacherAvailable(t) ? 'available' : ''].join(' ');
@@ -162,7 +161,7 @@ export default function Index() {
               <div key={t.index} className={getTeacherClass(t, selectedTeacher)}
                    onClick={() => setSelectedTeacher(current => current === t ? undefined : t)}>
                 <div className="right">
-                  <div ref={t === selectedTeacher ? selectedTeacherRef : null} className="selection-element" />
+                  <div ref={t === selectedTeacher ? selectedTeacherRef : null} className="selection-element"/>
                   <div className="name">{t.name}</div>
                   <div>{t.subjects}</div>
                   <div>{t.hours}</div>
@@ -182,15 +181,17 @@ export default function Index() {
                       {formatJoinDate(t)}
                     </div>}
                   </div>
-                  <div className="leftBottom">
-                    {!isIdleFetcher && <div>מעדכן...</div>}
-                    {isIdleFetcher && isTeacherAvailable(t) &&
-                       <a href={'#markAsAvailable'} onClick={(e) => assignTeacher(e, t, '')}>סמן כלא
-                         זמין</a>}
-                    {isIdleFetcher && isTeacherUnavailable(t) &&
-                       <a href={'#markAsUnavailable'} onClick={(e) => assignTeacher(e, t, Available)}>סמן
-                         כזמין</a>}
-                  </div>
+                  {!isTeacherAssigned(t) &&
+                     <div className="leftBottom">
+                       <div className="status">{isTeacherAvailable(t) ? 'זמין' : 'לא זמין'}</div>
+                       {isIdleFetcher ? isTeacherAvailable(t)
+                           ? <a href={'#markAsAvailable'} onClick={(e) => assignTeacher(e, t, '')}>סמן כלא
+                             זמין</a>
+                           : <a href={'#markAsUnavailable'} onClick={(e) => assignTeacher(e, t, Available)}>סמן
+                             כזמין</a>
+                         : <div>מעדכן...</div>}
+                     </div>
+                  }
                 </div>
               </div>
             ))

@@ -109,6 +109,10 @@ h2 button {
 
   .leftBottom {
     font-size: 0.8em;
+
+    .status {
+      font-weight: bold;
+    }
   }
 
   .name {
