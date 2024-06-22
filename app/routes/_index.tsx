@@ -120,6 +120,12 @@ export default function Index() {
   }, [selectedTeacher, teachers]);
 
   useEffect(() => {
+    if (teachers.length === 0 && myTeachers.length > 0 && !includeAssigned) {
+      toggleIncludeAssigned();
+    }
+  }, [includeAssigned, myTeachers.length, teachers.length])
+
+  useEffect(() => {
     if (selectedTeacher && selectedTeacherRef.current) {
       setTimeout(() => selectedTeacherRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' }));
     }

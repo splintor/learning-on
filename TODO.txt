@@ -1,4 +1,3 @@
 1. Teachers list
 2. Add students fields
 3. About (with Logout button) screen
-4. Fix handling case where all teachers are assigned
