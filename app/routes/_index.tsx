@@ -1,10 +1,10 @@
+import { useReducer, useState, type MouseEvent, useEffect, useRef, type ReactNode } from 'react';
 import type { LinksFunction, MetaFunction } from '@vercel/remix';
 import { Form, useFetcher, useLoaderData } from '@remix-run/react';
 import { assignStudent, assignTeacher, getData, type Student, type Teacher } from '~/googleapis.server';
 import { SocialsProvider } from 'remix-auth-socials';
 import { authenticator } from '~/auth.server';
 import styles from "./main.css?url";
-import { useReducer, useState, type MouseEvent, useEffect, useRef } from 'react';
 import { ToastContainer, Zoom, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -63,7 +63,7 @@ export async function action({ request }: { request: Request }) {
   if (teacherIndex) {
     await assignTeacher({ teacherIndex, assignValue });
   } else {
-    await assignStudent({ studentIndex, assignValue })
+    await assignStudent({ studentIndex, assignValue });
   }
   return null;
 }
@@ -111,7 +111,7 @@ export default function Index() {
   const [matchingStudents, setMatchingStudents] = useState<Student[]>([]);
   const selectedTeacherRef = useRef<HTMLDivElement>(null);
   const studentsSwipeRef = useRef<HTMLDivElement>(null);
-  const [studentAssignToast, setStudentAssignToast] = useState<JSX.Element>();
+  const [studentAssignToast, setStudentAssignToast] = useState<ReactNode>();
 
   useEffect(() => {
     if (selectedTeacher) {
@@ -123,11 +123,15 @@ export default function Index() {
     if (teachers.length === 0 && myTeachers.length > 0 && !includeAssigned) {
       toggleIncludeAssigned();
     }
-  }, [includeAssigned, myTeachers.length, teachers.length])
+  }, [includeAssigned, myTeachers.length, teachers.length]);
 
   useEffect(() => {
     if (selectedTeacher && selectedTeacherRef.current) {
-      setTimeout(() => selectedTeacherRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' }));
+      setTimeout(() => selectedTeacherRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'start',
+      }));
     }
   }, [selectedTeacher]);
 
@@ -136,7 +140,7 @@ export default function Index() {
       toast.success(studentAssignToast);
       setStudentAssignToast(undefined);
     }
-  }, [studentAssignToast, isTeacherFetcherIdle])
+  }, [studentAssignToast, isTeacherFetcherIdle]);
 
   useEffect(() => {
     if (!selectedTeacher) {
@@ -148,7 +152,7 @@ export default function Index() {
       } else {
         const bestMatchingStudents = myStudents
           .filter(s => !s.teacher)
-          .map(s => ({ student: s, match: studentMatchForTeacher(s, selectedTeacher)}))
+          .map(s => ({ student: s, match: studentMatchForTeacher(s, selectedTeacher) }))
           .sort((s1, s2) => s2.match - s1.match)
           .slice(0, 50)
           .map(({ student }) => student);
@@ -177,9 +181,12 @@ export default function Index() {
     const origValue = s.teacher;
     const cancelFn = () => assignStudent(e, s, origValue);
     if (isStudentAssigned(s)) {
-      setStudentAssignToast(<div className="toast">השיבוץ של {s.name} ל{selectedTeacher?.name} בוטל בהצלחה. <a href={'#re-assign'} onClick={cancelFn}>שבץ מחדש</a></div>);
-    } else if(assignValue !== Available) {
-      setStudentAssignToast(<div className="toast">{s.name} שובץ בהצלחה ל{selectedTeacher?.name}<a href={'#re-assign'} onClick={cancelFn}>בטל</a></div>);
+      setStudentAssignToast(<div className="toast">השיבוץ של {s.name} ל{selectedTeacher?.name} בוטל בהצלחה. <a
+        href={'#re-assign'} onClick={cancelFn}>שבץ מחדש</a></div>);
+    } else if (assignValue !== Available) {
+      setStudentAssignToast(<div className="toast">{s.name} שובץ בהצלחה ל{selectedTeacher?.name}<a href={'#re-assign'}
+                                                                                                   onClick={cancelFn}>בטל</a>
+      </div>);
     }
     s.teacher = assignValue;
   }
@@ -219,17 +226,18 @@ export default function Index() {
                       {formatJoinDate(t)}
                     </div>}
                   </div>
-                  {!isTeacherAssigned(t) &&
-                     <div className="leftBottom">
-                       <div className="status">{isTeacherAvailable(t) ? 'זמין' : 'לא זמין'}</div>
-                       {isTeacherFetcherIdle ? isTeacherAvailable(t)
-                           ? <a href={'#markAsAvailable'} onClick={(e) => assignTeacher(e, t, '')}>סמן כלא
-                             זמין</a>
-                           : <a href={'#markAsUnavailable'} onClick={(e) => assignTeacher(e, t, Available)}>סמן
-                             כזמין</a>
-                         : <div>מעדכן...</div>}
-                     </div>
-                  }
+                  <div className="leftBottom">
+                    <div
+                      className="status">{isTeacherAssigned(t) ? 'משובץ' : isTeacherAvailable(t) ? 'זמין' : 'לא זמין'}</div>
+                    {!isTeacherAssigned(t) && <div>
+                      {isTeacherFetcherIdle ? isTeacherAvailable(t)
+                          ? <a href={'#markAsAvailable'} onClick={(e) => assignTeacher(e, t, '')}>סמן כלא
+                            זמין</a>
+                          : <a href={'#markAsUnavailable'} onClick={(e) => assignTeacher(e, t, Available)}>סמן
+                            כזמין</a>
+                        : <div>מעדכן...</div>}
+                    </div>}
+                  </div>
                 </div>
               </div>
             ))
