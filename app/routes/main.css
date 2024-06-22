@@ -59,11 +59,17 @@ h2 button {
   overflow-x: scroll;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+
+  .selection-element {
+    position: relative;
+    right: -14px;
+  }
 }
 
 .swipe-list.teachers > div {
   height: 220px;
   max-height: 220px;
+  overflow-y: hidden;
 }
 
 .swipe-list.students > div {

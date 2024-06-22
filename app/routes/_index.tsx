@@ -4,7 +4,7 @@ import { assignTeacher, getData, type Student, type Teacher } from '~/googleapis
 import { SocialsProvider } from 'remix-auth-socials';
 import { authenticator } from '~/auth.server';
 import styles from "./main.css?url";
-import { useReducer, useState, type MouseEvent, useEffect } from 'react';
+import { useReducer, useState, type MouseEvent, useEffect, useRef } from 'react';
 
 // noinspection JSUnusedGlobalSymbols
 export const links: LinksFunction = () => [
@@ -101,12 +101,19 @@ export default function Index() {
   const [includeAssigned, toggleIncludeAssigned] = useReducer((state) => !state, false);
   const teachers = myTeachers && !includeAssigned ? myTeachers.filter(t => !isTeacherAssigned(t)) : myTeachers;
   const [matchingStudents, setMatchingStudents] = useState<Student[]>([]);
+  const selectedTeacherRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (selectedTeacher && !teachers.includes(selectedTeacher)) {
       setSelectedTeacher(undefined);
     }
-  }, [selectedTeacher, teachers])
+  }, [selectedTeacher, teachers]);
+
+  useEffect(() => {
+    if (selectedTeacher && selectedTeacherRef.current) {
+      selectedTeacherRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    }
+  }, [selectedTeacher]);
 
   useEffect(() => {
     if (!selectedTeacher) {
@@ -155,6 +162,7 @@ export default function Index() {
               <div key={t.index} className={getTeacherClass(t, selectedTeacher)}
                    onClick={() => setSelectedTeacher(current => current === t ? undefined : t)}>
                 <div className="right">
+                  <div ref={t === selectedTeacher ? selectedTeacherRef : null} className="selection-element" />
                   <div className="name">{t.name}</div>
                   <div>{t.subjects}</div>
                   <div>{t.hours}</div>
