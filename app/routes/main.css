@@ -28,13 +28,28 @@ h2 button {
   padding: 15px;
 }
 
+.teachers-section label {
+  margin-inline-start: 5px;
+}
+
 .teachers-header {
   display: flex;
-  justify-content: space-between;
-  padding-inline-start: 10px;
+  justify-content: end;
 
   & input {
     margin-inline-end: 7px;
+  }
+}
+
+.students-section {
+  margin-block-start: 40px;
+}
+
+.students-header {
+  margin-inline-start: 5px;
+
+  & span {
+    font-weight: bold;
   }
 }
 
@@ -46,11 +61,19 @@ h2 button {
   scrollbar-width: none;  /* Firefox */
 }
 
+.swipe-list.teachers > div {
+  height: 220px;
+  max-height: 220px;
+}
+
+.swipe-list.students > div {
+  height: 260px;
+  max-height: 260px;
+}
+
 .swipe-list > div {
   display: flex;
   justify-content: space-between;
-  height: 220px;
-  max-height: 220px;
   min-width: 90vw;
   margin: 5px;
   background: #EEE;

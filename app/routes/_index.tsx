@@ -28,7 +28,7 @@ export async function loader({ request }: { request: Request }) {
       userEmail,
       myTeachers: [] as Teacher[],
       myStudents: [] as Student[],
-    }
+    };
   }
 
   const data = await getData();
@@ -67,13 +67,13 @@ const isTeacherAvailable = (t: Teacher) => t.status === Available;
 const isTeacherUnavailable = (t: Teacher) => !t.status;
 const isTeacherAssigned = (t: Teacher) => Boolean(t.student);
 const getTeacherWhatsappMsg = (t: Teacher) => `שלום ${t.name}, האם אפשר לשבץ אליך תלמידים לשיעורים פרטיים?`;
-const getTeacherClass = (t: Teacher, selectedTeacher: Teacher | undefined) => [t === selectedTeacher ? 'selected' : '', isTeacherAssigned(t) ? 'assigned' : isTeacherAvailable(t) ? 'available': ''].join(' ');
+const getTeacherClass = (t: Teacher, selectedTeacher: Teacher | undefined) => [t === selectedTeacher ? 'selected' : '', isTeacherAssigned(t) ? 'assigned' : isTeacherAvailable(t) ? 'available' : ''].join(' ');
 
 const isStudentAvailable = (s: Student) => s.teacher === Available;
 const isStudentUnavailable = (s: Student) => !s.teacher;
-const isStudentAssigned = (s: Student) => !isStudentAvailable(s) && !isStudentUnavailable(s)
+const isStudentAssigned = (s: Student) => !isStudentAvailable(s) && !isStudentUnavailable(s);
 const getStudentWhatsappMsg = (s: Student) => `שלום ${s.name}, האם אפשר לשבץ אליך מורה לשיעורים פרטיים?`;
-const getStudentClass = (s: Student, selectedStudent: Student | undefined) => [s === selectedStudent ? 'selected' : '', isStudentAssigned(s) ? 'assigned' : isStudentAvailable(s) ? 'available': ''].join(' ');
+const getStudentClass = (s: Student) => isStudentAssigned(s) ? 'assigned' : isStudentAvailable(s) ? 'available' : '';
 
 const formatJoinDate = (sOrT: Pick<Student | Teacher, 'joinDate'>) => new Date(sOrT.joinDate).toLocaleDateString();
 
@@ -98,10 +98,15 @@ export default function Index() {
   const isIdleFetcher = fetcher.state === 'idle';
   const { myStudents, myTeachers, user } = useLoaderData<typeof loader>();
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher>();
-  const [selectedStudent, setSelectedStudent] = useState<Student>();
   const [includeAssigned, toggleIncludeAssigned] = useReducer((state) => !state, false);
   const teachers = myTeachers && !includeAssigned ? myTeachers.filter(t => !isTeacherAssigned(t)) : myTeachers;
   const [matchingStudents, setMatchingStudents] = useState<Student[]>([]);
+
+  useEffect(() => {
+    if (selectedTeacher && !teachers.includes(selectedTeacher)) {
+      setSelectedTeacher(undefined);
+    }
+  }, [selectedTeacher, teachers])
 
   useEffect(() => {
     if (!selectedTeacher) {
@@ -111,45 +116,44 @@ export default function Index() {
       if (assignedStudents.length) {
         setMatchingStudents(assignedStudents);
       } else {
-        const bestMatchingStudents = myStudents.map(student => ({ student, match: studentMatchForTeacher(student, selectedTeacher) }))
+        const bestMatchingStudents = myStudents.map(student => ({
+          student,
+          match: studentMatchForTeacher(student, selectedTeacher),
+        }))
           .sort((s1, s2) => s2.match - s1.match)
           .slice(0, 50)
           .map(({ student }) => student);
         setMatchingStudents(bestMatchingStudents);
       }
     }
-  }, [selectedTeacher, myStudents])
+  }, [selectedTeacher, myStudents]);
 
   function assignTeacher(e: MouseEvent, t: Teacher, assignValue: string) {
     e.stopPropagation();
     e.preventDefault();
-    fetcher.submit({ teacherIndex: t.index, assignValue }, { method: 'POST'});
+    fetcher.submit({ teacherIndex: t.index, assignValue }, { method: 'POST' });
   }
 
   function assignStudent(e: MouseEvent, s: Student, assignValue: string) {
     e.stopPropagation();
     e.preventDefault();
-    fetcher.submit({ teacherIndex: s.index, assignValue }, { method: 'POST'});
+    fetcher.submit({ teacherIndex: s.index, assignValue }, { method: 'POST' });
   }
 
   return (
     <div className="root">
       <h1>לומדים הלאה - מערכת שיבוץ</h1>
       {teachers ? <div className="main">
-        {teachers.length > 0 && <div>
+        {teachers.length > 0 && <div className="teachers-section">
           <div className="teachers-header">
             <a href={'#teacher-list'}>
               רשימת מורים
             </a>
-            <label>
-              <input type="checkbox" checked={includeAssigned} onChange={toggleIncludeAssigned}/>
-              הצג גם מורים שכבר צוותו
-            </label>
           </div>
           <div className="teachers swipe-list">{
             teachers.map(t => (
               <div key={t.index} className={getTeacherClass(t, selectedTeacher)}
-                   onClick={() => setSelectedTeacher(t)}>
+                   onClick={() => setSelectedTeacher(current => current === t ? undefined : t)}>
                 <div className="right">
                   <div className="name">{t.name}</div>
                   <div>{t.subjects}</div>
@@ -183,18 +187,19 @@ export default function Index() {
               </div>
             ))
           }</div>
+          <label>
+            <input type="checkbox" checked={includeAssigned} onChange={toggleIncludeAssigned}/>
+            הצג גם מורים שכבר צוותו
+          </label>
         </div>}
 
-        {matchingStudents.length > 0 && <div>
+        {matchingStudents.length > 0 && <div className="students-section">
           <div className="students-header">
-            <a href={'#students-list'}>
-              רשימת תלמידים
-            </a>
+            רשימת תלמידים שרלוונטיים ל<span>{selectedTeacher?.name}</span>:
           </div>
           <div className="students swipe-list">{
             matchingStudents.map(s => (
-              <div key={s.index} className={getStudentClass(s, selectedStudent)}
-                   onClick={() => setSelectedStudent(s)}>
+              <div key={s.index} className={getStudentClass(s)}>
                 <div className="right">
                   <div className="name">{s.name}</div>
                   <div>{s.subjects}</div>
