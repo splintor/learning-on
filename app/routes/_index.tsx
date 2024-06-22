@@ -24,12 +24,16 @@ export const meta: MetaFunction = () => {
 export async function loader({ request }: { request: Request }) {
   const user = await authenticator.isAuthenticated(request);
   const userEmail = user?._json.email;
+  const ownerEmail = process.env.OWNER_EMAIL;
+  const ownerPhone = process.env.OWNER_PHONE;
   if (!userEmail) {
     return {
       user,
       userEmail,
       myTeachers: [] as Teacher[],
       myStudents: [] as Student[],
+      ownerEmail,
+      ownerPhone,
     };
   }
 
@@ -51,6 +55,8 @@ export async function loader({ request }: { request: Request }) {
     userEmail,
     myTeachers,
     myStudents,
+    ownerEmail,
+    ownerPhone,
   };
 }
 
@@ -104,7 +110,9 @@ export default function Index() {
   const isTeacherFetcherIdle = teacherFetcher.state === 'idle';
   const studentFetcher = useFetcher({ key: "assign-student" });
   const isStudentFetcherIdle = studentFetcher.state === 'idle';
-  const { myStudents, myTeachers, user } = useLoaderData<typeof loader>();
+  const {
+    myStudents, myTeachers, user, userEmail, ownerEmail, ownerPhone,
+  } = useLoaderData<typeof loader>();
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher>();
   const [includeAssigned, toggleIncludeAssigned] = useReducer((state) => !state, false);
   const teachers = myTeachers && !includeAssigned ? myTeachers.filter(t => !isTeacherAssigned(t)) : myTeachers;
@@ -112,6 +120,8 @@ export default function Index() {
   const selectedTeacherRef = useRef<HTMLDivElement>(null);
   const studentsSwipeRef = useRef<HTMLDivElement>(null);
   const [studentAssignToast, setStudentAssignToast] = useState<ReactNode>();
+  const [isAboutModalOpen, toggleAboutModalOpen] = useReducer((state) => !state, false);
+  const [isTeachersListModalOpen, toggleTeachersListModalOpen] = useReducer((state) => !state, false);
 
   useEffect(() => {
     if (selectedTeacher) {
@@ -193,11 +203,14 @@ export default function Index() {
 
   return (
     <div className="root">
-      <h1>לומדים הלאה - מערכת שיבוץ</h1>
+      <h1 onClick={toggleAboutModalOpen}>לומדים הלאה - מערכת שיבוץ</h1>
       {teachers ? <div className="main">
         {teachers.length > 0 && <div className="teachers-section">
           <div className="teachers-header">
-            <a href={'#teacher-list'}>
+            <a href={'#teacher-list'} onClick={e => {
+              e.preventDefault();
+              toggleTeachersListModalOpen();
+            }}>
               רשימת מורים
             </a>
           </div>
@@ -335,6 +348,41 @@ export default function Index() {
           transition={Zoom}
         />
       </div> : <h2 className="loader">טוען נתונים...</h2>}
+      <div className={`about modal ${isAboutModalOpen ? 'open' : ''}`}>
+        <h2>מערכת השיבוץ של מיזם <a href="https://www.learningon.org/">לומדים הלאה</a> נכתבה ב<a
+          href="https://github.com/splintor/learning-on">קוד פתוח</a> בידי <a href={`mailto:${ownerEmail}`}>שמוליק
+          פלינט</a> <a className="whatsapp"
+                       href={`https://wa.me/${ownerPhone}?text=שלום שמוליק, זה בקשר למערכת השיבוץ של לומדים הלאה.`}><img
+          alt="WhatsApp" src="/whatsapp.svg" height={40}/></a>.
+        </h2>
+        {user && <div>
+          <h2>המצוות הנוכחי הוא
+            <br/>
+            <a href={`mailto:${userEmail}`}>{user.displayName}</a></h2>
+          <Form
+             method="post"
+             action={`/logout`}>
+            <button onClick={toggleAboutModalOpen}>יציאה</button>
+          </Form>
+        </div>}
+      </div>
+      <div className={`teachers-list modal ${isTeachersListModalOpen ? 'open' : ''}`}>
+        <h4>רשימת מורים</h4>
+        <div className="list">
+          {myTeachers.map(t => (
+            <div key={t.index} onClick={() => {
+              toggleTeachersListModalOpen();
+              if (isTeacherAssigned(t) && !teachers.includes(t)) {
+                toggleIncludeAssigned();
+              }
+              setSelectedTeacher(t);
+            }}>
+              <div>{t.name}</div>
+              <div className="status">{isTeacherAssigned(t) ? 'משובץ' : isTeacherAvailable(t) ? 'זמין' : 'לא זמין'}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

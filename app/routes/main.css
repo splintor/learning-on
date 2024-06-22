@@ -5,11 +5,12 @@
 }
 
 html {
-  height: 100%;
+  height: 100vh;
+  overflow: hidden;
 }
 
 body {
-  margin: 4px;
+  overflow: hidden;
 }
 
 h1 {
@@ -163,4 +164,62 @@ form.message {
 
 form.warning {
   color: red;
+}
+
+.modal {
+  position: fixed;
+  top: 70px;
+  height: 0;
+  overflow-y: hidden;
+  background: white;
+  transition: height .5s ease-in-out;
+
+
+  &.open {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 70px);
+  }
+
+  &.about {
+    z-index: 1000;
+    gap: 20px;
+    & form {
+      display: flex;
+      justify-content: center;;
+
+      & button {
+        font-size: 2em;
+        border-radius: 15px;
+        padding: 15px;
+      }
+    }
+  }
+
+  &.teachers-list {
+    width: 100vw;
+    padding-inline-start: 10px;
+
+    .list {
+      width: calc(100vw - 30px);
+      margin-block-start: -20px;
+      overflow-y: scroll;
+      max-height: calc(100vh - 50px);
+    }
+
+    .list > div {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .status {
+        font-size: 0.8em;
+      }
+    }
+  }
+
+
+  .whatsapp {
+    vertical-align: sub;
+  }
 }
