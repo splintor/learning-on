@@ -87,7 +87,7 @@ h2 button {
 .swipe-list > div {
   display: flex;
   justify-content: space-between;
-  min-width: 80vw;
+  min-width: min(80vw, 450px);
   margin: 5px;
   background: #eee;
   border-radius: 10px;

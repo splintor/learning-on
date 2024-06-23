@@ -373,14 +373,16 @@ export default function Index() {
                   </div>
                 ))}
               </div>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={includeAssigned}
-                  onChange={() => setIncludeAssigned(v => !v)}
-                />
-                הצג גם מורים שכבר צוותו
-              </label>
+              <div>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={includeAssigned}
+                    onChange={() => setIncludeAssigned(v => !v)}
+                  />
+                  הצג גם מורים שכבר צוותו
+                </label>
+              </div>
             </div>
           )}
 
