@@ -1,2 +1,0 @@
-1. Add students fields
-2. Enable copying phone number

@@ -130,6 +130,10 @@ h2 button {
     font-weight: bold;
   }
 
+  .grade {
+    font-size: 0.8em;
+  }
+
   .contact > span {
     white-space: nowrap;
     gap: 15px;

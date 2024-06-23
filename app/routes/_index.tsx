@@ -125,16 +125,16 @@ const formatJoinDate = (sOrT: Pick<Student | Teacher, 'joinDate'>) =>
 
 function studentMatchForTeacher(student: Student, teacher: Teacher) {
   if (student.grade.match(/[א-ו]/) && !teacher.subjects.includes('יסודי')) {
-    return 0;
+    return -1000;
   }
   if (student.grade.match(/[ז-ט]/) && !teacher.subjects.includes('חטיבה')) {
-    return 0;
+    return -1000;
   }
   if (
     student.grade.match(/(post|י|יא|יב)/) &&
     !teacher.subjects.includes('תיכון')
   ) {
-    return 0;
+    return -1000;
   }
 
   const subjects = student.subjects.split(',').map(s => s.trim());
@@ -397,9 +397,13 @@ export default function Index() {
                 {matchingStudents.map(s => (
                   <div key={s.index} className={getStudentClass(s)}>
                     <div className="right">
-                      <div className="name">{s.name}</div>
+                      <div className="name">
+                        {s.name} <span className="grade">({s.grade})</span>
+                      </div>
                       <div>{s.subjects}</div>
                       <div>{s.hours}</div>
+                      <div>{s.details}</div>
+                      <div>{s.comment}</div>
                     </div>
                     <div className="left">
                       <div className="leftTop">
