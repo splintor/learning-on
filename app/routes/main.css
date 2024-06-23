@@ -95,7 +95,7 @@ h2 button {
   padding: 5px;
 
   &:only-child {
-    min-width: 90vw;
+    min-width: min(90vw, 450px);
   }
 
   &.available {
