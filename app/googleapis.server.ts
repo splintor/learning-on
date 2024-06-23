@@ -10,7 +10,10 @@ function getGoogleSheets() {
   const auth = new GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: Buffer.from(process.env.GOOGLE_PRIVATE_KEY as string, 'base64').toString('ascii'),
+      private_key: Buffer.from(
+        process.env.GOOGLE_PRIVATE_KEY as string,
+        'base64'
+      ).toString('ascii'),
     },
     scopes: 'https://www.googleapis.com/auth/spreadsheets',
   });
@@ -20,7 +23,8 @@ function getGoogleSheets() {
 
 type Sheets = ReturnType<typeof getGoogleSheets>;
 
-const fixPhone = (phone: string | undefined) => phone?.replace(/[^\d+-]/g, '').replace(/^([1-9])/, '0$1') ?? '';
+const fixPhone = (phone: string | undefined) =>
+  phone?.replace(/[^\d+-]/g, '').replace(/^([1-9])/, '0$1') ?? '';
 
 function parseDate(dmy: string | undefined) {
   if (!dmy) {
@@ -42,7 +46,7 @@ export type Student = {
   hours: string;
   comment: string;
   joinDate: string;
-}
+};
 
 export type Teacher = {
   index: number;
@@ -56,7 +60,7 @@ export type Teacher = {
   status: string;
   student?: string;
   coordinator: string;
-}
+};
 
 export async function getData() {
   try {
@@ -67,25 +71,26 @@ export async function getData() {
       getValues(sheets, `${coordinatorsSheetName}!A2:B`),
     ]);
 
-    const students = studentRows?.map<Student>((row, index) => ({
-      index,
-      name: row[0],
-      city: row[1],
-      grade: row[2] || '',
-      subjects: row[12] || '',
-      phone: fixPhone(row[13]),
-      teacher: row[14],
-      details: row[16],
-      hours: row[17],
-      comment: row[19],
-      joinDate: parseDate(row[20]),
-    })) ?? [];
+    const students =
+      studentRows?.map<Student>((row, index) => ({
+        index,
+        name: row[0],
+        city: row[1],
+        grade: row[2] || '',
+        subjects: row[12] || '',
+        phone: fixPhone(row[13]),
+        teacher: row[14],
+        details: row[16],
+        hours: row[17],
+        comment: row[19],
+        joinDate: parseDate(row[20]),
+      })) ?? [];
 
     const teachers = teacherRows?.map<Teacher>((row, index) => ({
       index,
       name: row[0],
       phone: fixPhone(row[1]),
-      subjects: row[15]?.replace(/\\ [A-Z]*/ig, '') || '',
+      subjects: row[15]?.replace(/\\ [A-Z]*/gi, '') || '',
       hours: row[19],
       background: row[20],
       comment: row[22],
@@ -103,14 +108,23 @@ export async function getData() {
 
 async function getValues(sheets: Sheets, range: string) {
   try {
-    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+    });
     return response.data.values;
   } catch (err) {
     throw new Error(`Get values failed. Info: ${err}`);
   }
 }
 
-export async function assignTeacher({ teacherIndex, assignValue }: { teacherIndex: number, assignValue: string }) {
+export async function assignTeacher({
+  teacherIndex,
+  assignValue,
+}: {
+  teacherIndex: number;
+  assignValue: string;
+}) {
   try {
     const sheets = getGoogleSheets();
     await sheets.spreadsheets.values.update({
@@ -125,7 +139,13 @@ export async function assignTeacher({ teacherIndex, assignValue }: { teacherInde
   }
 }
 
-export async function assignStudent({ studentIndex, assignValue }: { studentIndex: number, assignValue: string }) {
+export async function assignStudent({
+  studentIndex,
+  assignValue,
+}: {
+  studentIndex: number;
+  assignValue: string;
+}) {
   try {
     const sheets = getGoogleSheets();
     await sheets.spreadsheets.values.update({
@@ -170,7 +190,6 @@ export async function assignStudent({ studentIndex, assignValue }: { studentInde
 //     throw err;
 //   }
 // }
-
 
 // export const updateTeacherForStudent = webMethod(Permissions.Anyone, async (studentRowIndex, teacherName) => {
 //   try {

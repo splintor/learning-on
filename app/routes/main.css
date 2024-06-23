@@ -18,7 +18,9 @@ h1 {
   margin: 10px 3px;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   text-align: center;
 }
 
@@ -58,8 +60,8 @@ h2 button {
   display: inline-flex;
   max-width: 100vw;
   overflow-x: scroll;
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 
   .right {
     position: relative;
@@ -87,7 +89,7 @@ h2 button {
   justify-content: space-between;
   min-width: 90vw;
   margin: 5px;
-  background: #EEE;
+  background: #eee;
   border-radius: 10px;
   border: 1px solid black;
   padding: 5px;
@@ -173,7 +175,7 @@ form.warning {
   height: 0;
   overflow-y: hidden;
   background: white;
-  transition: height .5s ease-in-out;
+  transition: height 0.5s ease-in-out;
 
   &.open {
     display: flex;
@@ -195,7 +197,7 @@ form.warning {
     gap: 20px;
     & form {
       display: flex;
-      justify-content: center;;
+      justify-content: center;
 
       & button {
         font-size: 2em;
@@ -233,7 +235,6 @@ form.warning {
       }
     }
   }
-
 
   .whatsapp {
     vertical-align: sub;

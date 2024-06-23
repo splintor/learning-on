@@ -1,5 +1,6 @@
 body {
-  background: url("../learning-on-background.webp") no-repeat center center fixed;
+  background: url('../learning-on-background.webp') no-repeat center center
+    fixed;
   background-size: cover;
   direction: rtl;
 }

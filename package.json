@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "remix vite:build",
+    "lint": "eslint .",
+    "prettier": "prettier --write .",
     "dev": "remix vite:dev",
     "typecheck": "tsc"
   },
