@@ -59,7 +59,8 @@ export async function loader({ request }: { request: Request }) {
       : [];
   const myStudents = data.students.filter(
     student =>
-      !student.teacher || myTeachers.some(t => t.name === student.teacher)
+      !isStudentAssigned(student) ||
+      myTeachers.some(t => t.name === student.teacher)
   );
   myStudents.forEach(s => {
     if (s.teacher) {
@@ -155,7 +156,9 @@ export default function Index() {
   );
   const teachers =
     myTeachers && !includeAssigned
-      ? myTeachers.filter(t => !isTeacherAssigned(t))
+      ? myTeachers.filter(
+          t => !isTeacherAssigned(t) || t.name === selectedTeacher?.name
+        )
       : myTeachers;
   const [matchingStudents, setMatchingStudents] = useState<Student[]>([]);
   const selectedTeacherRef = useRef<HTMLDivElement>(null);
@@ -213,7 +216,7 @@ export default function Index() {
         setMatchingStudents(assignedStudents);
       } else {
         const bestMatchingStudents = myStudents
-          .filter(s => !s.teacher)
+          .filter(s => !isStudentAssigned(s))
           .map(s => ({
             student: s,
             match: studentMatchForTeacher(s, selectedTeacher),
@@ -260,7 +263,7 @@ export default function Index() {
           </a>
         </div>
       );
-    } else if (assignValue !== Available) {
+    } else if (assignValue && assignValue !== Available) {
       setStudentAssignToast(
         <div className="toast">
           {s.name} שובץ בהצלחה ל{selectedTeacher?.name}
@@ -385,7 +388,7 @@ export default function Index() {
           {matchingStudents.length > 0 && (
             <div className="students-section">
               <div className="students-header">
-                {matchingStudents[0].teacher
+                {isStudentAssigned(matchingStudents[0])
                   ? 'תלמידים שמשובצים ל'
                   : 'תלמידים שרלוונטיים לשיבוץ ל'}
                 <span>{selectedTeacher?.name}</span>
@@ -424,56 +427,58 @@ export default function Index() {
                       </div>
 
                       <div className="leftBottom">
-                        <div className="status">
-                          {isStudentAssigned(s)
-                            ? `משובץ ל${s.teacher}`
-                            : isStudentAvailable(s)
-                            ? 'זמין'
-                            : 'לא זמין'}
-                        </div>
                         {isStudentFetcherIdle ? (
-                          <div>
-                            {!isStudentAssigned(s) && (
+                          <>
+                            <div className="status">
+                              {isStudentAssigned(s)
+                                ? `משובץ ל${s.teacher}`
+                                : isStudentAvailable(s)
+                                ? 'זמין'
+                                : 'לא זמין'}
+                            </div>
+                            <div>
+                              {!isStudentAssigned(s) && (
+                                <div>
+                                  {isStudentAvailable(s) ? (
+                                    <a
+                                      href={'#markAsAvailable'}
+                                      onClick={e => assignStudent(e, s, '')}
+                                    >
+                                      סמן כלא זמין
+                                    </a>
+                                  ) : (
+                                    <a
+                                      href={'#markAsUnavailable'}
+                                      onClick={e =>
+                                        assignStudent(e, s, Available)
+                                      }
+                                    >
+                                      סמן כזמין
+                                    </a>
+                                  )}
+                                </div>
+                              )}
                               <div>
-                                {isStudentAvailable(s) ? (
+                                {isStudentAssigned(s) ? (
                                   <a
-                                    href={'#markAsAvailable'}
+                                    href={'#unassignStudent'}
                                     onClick={e => assignStudent(e, s, '')}
                                   >
-                                    סמן כלא זמין
+                                    בטל שיבוץ ל{s.teacher}
                                   </a>
                                 ) : (
                                   <a
-                                    href={'#markAsUnavailable'}
+                                    href={'#assignStudent'}
                                     onClick={e =>
-                                      assignStudent(e, s, Available)
+                                      assignStudent(e, s, selectedTeacher!.name)
                                     }
                                   >
-                                    סמן כזמין
+                                    שבץ ל{selectedTeacher?.name}
                                   </a>
                                 )}
                               </div>
-                            )}
-                            <div>
-                              {isStudentAssigned(s) ? (
-                                <a
-                                  href={'#unassignStudent'}
-                                  onClick={e => assignStudent(e, s, '')}
-                                >
-                                  בטל שיבוץ ל{s.teacher}
-                                </a>
-                              ) : (
-                                <a
-                                  href={'#assignStudent'}
-                                  onClick={e =>
-                                    assignStudent(e, s, selectedTeacher!.name)
-                                  }
-                                >
-                                  שבץ ל{selectedTeacher?.name}
-                                </a>
-                              )}
                             </div>
-                          </div>
+                          </>
                         ) : (
                           <div>מעדכן...</div>
                         )}

@@ -1,4 +1,2 @@
 1. Add students fields
 2. Enable copying phone number
-3. Select teacher when undoing an assignment
-4. Check why mark as available doesn't work.
