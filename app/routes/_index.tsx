@@ -400,10 +400,12 @@ export default function Index() {
                       <div className="name">
                         {s.name} <span className="grade">({s.grade})</span>
                       </div>
-                      <div>{s.subjects}</div>
-                      <div>{s.hours}</div>
-                      <div>{s.details}</div>
-                      <div>{s.comment}</div>
+                      <div className="details">
+                        <div>{s.subjects}</div>
+                        <div>{s.hours}</div>
+                        <div>{s.details}</div>
+                        <div>{s.comment}</div>
+                      </div>
                     </div>
                     <div className="left">
                       <div className="leftTop">

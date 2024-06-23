@@ -134,6 +134,11 @@ h2 button {
     font-size: 0.8em;
   }
 
+  .details {
+    max-height: calc(100% - 30px);
+    overflow: scroll;
+  }
+
   .contact > span {
     white-space: nowrap;
     gap: 15px;
