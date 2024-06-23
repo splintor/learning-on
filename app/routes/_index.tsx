@@ -122,6 +122,7 @@ export default function Index() {
   const [studentAssignToast, setStudentAssignToast] = useState<ReactNode>();
   const [isAboutModalOpen, toggleAboutModalOpen] = useReducer((state) => !state, false);
   const [isTeachersListModalOpen, toggleTeachersListModalOpen] = useReducer((state) => !state, false);
+  const [teachersSearch, setTeachersSearch] = useState<string>();
 
   useEffect(() => {
     if (selectedTeacher) {
@@ -349,6 +350,9 @@ export default function Index() {
         />
       </div> : <h2 className="loader">טוען נתונים...</h2>}
       <div className={`about modal ${isAboutModalOpen ? 'open' : ''}`}>
+        <div className="close" onClick={toggleAboutModalOpen}>
+          <img alt="Close" src="/close.svg"/>
+        </div>
         <h2>מערכת השיבוץ של מיזם <a href="https://www.learningon.org/">לומדים הלאה</a> נכתבה ב<a
           href="https://github.com/splintor/learning-on">קוד פתוח</a> בידי <a href={`mailto:${ownerEmail}`}>שמוליק
           פלינט</a> <a className="whatsapp"
@@ -367,20 +371,30 @@ export default function Index() {
         </div>}
       </div>
       <div className={`teachers-list modal ${isTeachersListModalOpen ? 'open' : ''}`}>
+        <div className="close" onClick={toggleTeachersListModalOpen}>
+          <img alt="Close" src="/close.svg"/>
+        </div>
         <h4>רשימת מורים</h4>
+        <div className="search">
+          <input type="search" placeholder="חיפוש"
+                 onInput={e => setTeachersSearch((e.target as HTMLInputElement).value)}/>
+        </div>
         <div className="list">
-          {myTeachers.map(t => (
-            <div key={t.index} onClick={() => {
-              toggleTeachersListModalOpen();
-              if (isTeacherAssigned(t) && !teachers.includes(t)) {
-                toggleIncludeAssigned();
-              }
-              setSelectedTeacher(t);
-            }}>
-              <div>{t.name}</div>
-              <div className="status">{isTeacherAssigned(t) ? 'משובץ' : isTeacherAvailable(t) ? 'זמין' : 'לא זמין'}</div>
-            </div>
-          ))}
+          {myTeachers
+            .filter(t => !teachersSearch || teachersSearch.split(' ').filter(Boolean).every(term => t.name.includes(term)))
+            .map(t => (
+              <div key={t.index} onClick={() => {
+                toggleTeachersListModalOpen();
+                if (isTeacherAssigned(t) && !teachers.includes(t)) {
+                  toggleIncludeAssigned();
+                }
+                setSelectedTeacher(t);
+              }}>
+                <div>{t.name}</div>
+                <div
+                  className="status">{isTeacherAssigned(t) ? 'משובץ' : isTeacherAvailable(t) ? 'זמין' : 'לא זמין'}</div>
+              </div>
+            ))}
         </div>
       </div>
     </div>

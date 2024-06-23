@@ -174,11 +174,19 @@ form.warning {
   background: white;
   transition: height .5s ease-in-out;
 
-
   &.open {
     display: flex;
     flex-direction: column;
     height: calc(100vh - 70px);
+  }
+
+  .close {
+    position: fixed;
+    left: 10px;
+  }
+
+  &:not(.open) .close {
+    display: none;
   }
 
   &.about {
@@ -200,9 +208,17 @@ form.warning {
     width: 100vw;
     padding-inline-start: 10px;
 
+    & h4 {
+      margin: 0;
+    }
+
+    .search input {
+      width: 70%;
+      padding: 3px;
+    }
+
     .list {
       width: calc(100vw - 30px);
-      margin-block-start: -20px;
       overflow-y: scroll;
       max-height: calc(100vh - 50px);
     }
