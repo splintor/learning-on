@@ -518,7 +518,7 @@ export default function Index() {
           )}
           <ToastContainer
             position="bottom-center"
-            autoClose={7000}
+            autoClose={5000}
             hideProgressBar
             newestOnTop={false}
             closeOnClick
