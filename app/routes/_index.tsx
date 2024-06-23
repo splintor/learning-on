@@ -150,10 +150,7 @@ export default function Index() {
   const { myStudents, myTeachers, user, userEmail, ownerEmail, ownerPhone } =
     useLoaderData<typeof loader>();
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher>();
-  const [includeAssigned, toggleIncludeAssigned] = useReducer(
-    state => !state,
-    false
-  );
+  const [includeAssigned, setIncludeAssigned] = useState(false);
   const teachers =
     myTeachers && !includeAssigned
       ? myTeachers.filter(
@@ -182,7 +179,7 @@ export default function Index() {
 
   useEffect(() => {
     if (teachers.length === 0 && myTeachers.length > 0 && !includeAssigned) {
-      toggleIncludeAssigned();
+      setIncludeAssigned(true);
     }
   }, [includeAssigned, myTeachers.length, teachers.length]);
 
@@ -378,7 +375,7 @@ export default function Index() {
                 <input
                   type="checkbox"
                   checked={includeAssigned}
-                  onChange={toggleIncludeAssigned}
+                  onChange={() => setIncludeAssigned(v => !v)}
                 />
                 הצג גם מורים שכבר צוותו
               </label>
@@ -600,7 +597,7 @@ export default function Index() {
                 onClick={() => {
                   toggleTeachersListModalOpen();
                   if (isTeacherAssigned(t) && !teachers.includes(t)) {
-                    toggleIncludeAssigned();
+                    setIncludeAssigned(true);
                   }
                   setSelectedTeacher(t);
                 }}
