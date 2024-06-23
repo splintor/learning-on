@@ -2,6 +2,7 @@ import { Authenticator } from 'remix-auth';
 import { GoogleStrategy, SocialsProvider } from 'remix-auth-socials';
 import type { GoogleProfile } from 'remix-auth-google';
 import { sessionStorage } from './session.server';
+import * as process from 'node:process';
 
 // Create an instance of the authenticator
 // It will take session storage as an input parameter and creates the user session on successful authentication
@@ -25,7 +26,7 @@ authenticator.use(
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       scope: ['openid email profile'],
-      callbackURL: `https://learning-on-org.vercel.app/auth/${SocialsProvider.GOOGLE}/callback`,
+      callbackURL: `https://${process.env.CALLBACK_URL_HOST}/auth/${SocialsProvider.GOOGLE}/callback`,
     },
     handleSocialAuthCallback
   )

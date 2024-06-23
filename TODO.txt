@@ -1,5 +1,4 @@
 1. Add students fields
 2. Enable copying phone number
-3. Make cards narrower, so it is clear that are more cards.
-4. Select teacher when undoing an assignment
-5. Check why mark as available doesn't work.
+3. Select teacher when undoing an assignment
+4. Check why mark as available doesn't work.
