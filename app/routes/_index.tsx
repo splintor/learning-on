@@ -308,8 +308,10 @@ export default function Index() {
                         className="selection-element"
                       />
                       <div className="name">{t.name}</div>
-                      <div>{t.subjects}</div>
-                      <div>{t.hours}</div>
+                      <div className="details">
+                        <div>{t.subjects}</div>
+                        <div>{t.hours}</div>
+                      </div>
                     </div>
                     <div className="left">
                       <div className="leftTop">
