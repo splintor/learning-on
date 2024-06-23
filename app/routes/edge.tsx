@@ -1,3 +1,4 @@
+import React from 'react';
 import type { MetaFunction } from "@vercel/remix";
 
 export const config = { runtime: "edge" };

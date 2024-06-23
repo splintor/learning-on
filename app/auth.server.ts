@@ -8,7 +8,7 @@ import { sessionStorage } from './session.server';
 export const authenticator = new Authenticator<GoogleProfile>(sessionStorage);
 
 // callback function that will be invoked upon successful authentication from social provider
-async function handleSocialAuthCallback({ profile }: { profile: any }) {
+async function handleSocialAuthCallback({ profile }: { profile: GoogleProfile }) {
   // create user in your db here
   // profile object contains all the user data like image, displayName, id
   return profile;
