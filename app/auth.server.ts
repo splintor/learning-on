@@ -25,7 +25,7 @@ authenticator.use(
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       scope: ['openid email profile'],
-      callbackURL: `http://localhost:5173/auth/${SocialsProvider.GOOGLE}/callback`,
+      callbackURL: `https://learning-on-org.vercel.app/auth/${SocialsProvider.GOOGLE}/callback`,
     },
     handleSocialAuthCallback
   )
