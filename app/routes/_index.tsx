@@ -101,7 +101,10 @@ const isTeacherAvailable = (t: Teacher) => t.status === Available;
 const isTeacherAssigned = (t: Teacher) => Boolean(t.student);
 const getTeacherWhatsappMsg = (t: Teacher) =>
   `שלום ${t.name}, האם אפשר לשבץ אליך תלמידים לשיעורים פרטיים?`;
-const getTeacherClass = (t: Teacher, selectedTeacher: Teacher | undefined) =>
+const getTeacherClass = (
+  t: Teacher,
+  selectedTeacher: Teacher | null | undefined
+) =>
   [
     t === selectedTeacher ? 'selected' : '',
     isTeacherAssigned(t)
@@ -149,7 +152,7 @@ export default function Index() {
   const isStudentFetcherIdle = studentFetcher.state === 'idle';
   const { myStudents, myTeachers, user, userEmail, ownerEmail, ownerPhone } =
     useLoaderData<typeof loader>();
-  const [selectedTeacher, setSelectedTeacher] = useState<Teacher>();
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>();
   const [includeAssigned, setIncludeAssigned] = useState(false);
   const teachers =
     myTeachers && !includeAssigned
@@ -174,6 +177,8 @@ export default function Index() {
   useEffect(() => {
     if (selectedTeacher) {
       setSelectedTeacher(teachers.find(t => t.name === selectedTeacher.name));
+    } else if (selectedTeacher !== null) {
+      setSelectedTeacher(teachers[0]);
     }
   }, [selectedTeacher, teachers]);
 
@@ -297,9 +302,7 @@ export default function Index() {
                     key={t.index}
                     className={getTeacherClass(t, selectedTeacher)}
                     onClick={() =>
-                      setSelectedTeacher(current =>
-                        current === t ? undefined : t
-                      )
+                      setSelectedTeacher(current => (current === t ? null : t))
                     }
                   >
                     <div className="right">
