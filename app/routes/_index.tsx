@@ -310,7 +310,14 @@ export default function Index() {
                         ref={t === selectedTeacher ? selectedTeacherRef : null}
                         className="selection-element"
                       />
-                      <div className="name">{t.name}</div>
+                      <div className="name">
+                        <a
+                          href={`/contact/${t.name}/${t.phone}`}
+                          onClick={e => e.stopPropagation()}
+                        >
+                          {t.name}
+                        </a>
+                      </div>
                       <div className="details">
                         <div>{t.subjects}</div>
                         <div>{t.hours}</div>
@@ -402,7 +409,13 @@ export default function Index() {
                   <div key={s.index} className={getStudentClass(s)}>
                     <div className="right">
                       <div className="name">
-                        {s.name} <span className="grade">({s.grade})</span>
+                        <a
+                          href={`/contact/${s.name}/${s.phone}`}
+                          onClick={e => e.stopPropagation()}
+                        >
+                          {s.name}
+                        </a>
+                        <span className="grade">({s.grade})</span>
                       </div>
                       <div className="details">
                         <div>{s.subjects}</div>
