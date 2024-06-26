@@ -19,11 +19,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   vCard.cellPhone = phone ?? '';
 
-  return new Response(vCard as any, {
+  return new Response(vCard.getFormattedString(), {
     status: 200,
     headers: {
-      'Content-Type': 'text/vcard; name="contact.vcf"',
-      'Content-Disposition': 'inline; filename="contact.vcf"',
+      'Content-Type': `text/vcard; name="contact-${phone}.vcf"`,
+      'Content-Disposition': `inline; filename="contact-${phone}.vcf"`,
     },
   });
 }
