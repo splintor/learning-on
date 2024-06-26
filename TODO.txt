@@ -1,0 +1,6 @@
+1. Handle smaller screens
+2. Change links to icon buttons
+3. Enable multiple teachers for a student
+4. Read Amit's doc
+5. Messages from teacher to coordinators
+6. Find a way to notify about e-mail.
