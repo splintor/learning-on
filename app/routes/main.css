@@ -136,6 +136,7 @@ h2 button {
   }
 
   .grade {
+    margin-inline-start: 5px;
     font-size: 0.8em;
   }
 
