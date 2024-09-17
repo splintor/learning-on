@@ -2,7 +2,7 @@ import google from '@googleapis/sheets';
 import { GoogleAuth } from 'google-auth-library';
 
 const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-const studentsSheetName = 'תלמידים';
+const studentsSheetName = 'תלמידים - נתיב העשרה';
 const teachersSheetName = 'מורים';
 const coordinatorsSheetName = 'מצוותים';
 
