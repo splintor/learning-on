@@ -35,6 +35,7 @@
     "eslint": "^8.38.0",
     "typescript": "^5.1.6",
     "vite": "^5.1.0",
+    "vite-plugin-mkcert": "^1.17.6",
     "vite-tsconfig-paths": "^4.2.1"
   },
   "engines": {
