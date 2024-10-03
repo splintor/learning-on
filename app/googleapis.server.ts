@@ -5,6 +5,7 @@ const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 const studentsSheetName = 'תלמידים - נתיב העשרה';
 const teachersSheetName = 'מורים';
 const coordinatorsSheetName = 'מצוותים';
+const matchedSheetName = 'שיבוצים';
 
 function getGoogleSheets() {
   const auth = new GoogleAuth({
@@ -26,80 +27,156 @@ type Sheets = ReturnType<typeof getGoogleSheets>;
 const fixPhone = (phone: string | undefined) =>
   phone?.replace(/[^\d+-]/g, '').replace(/^([1-9])/, '0$1') ?? '';
 
-function parseDate(dmy: string | undefined) {
-  if (!dmy) {
-    return '';
-  }
-  const parts = dmy.split('/').map(Number);
-  return new Date(parts[2], parts[1] - 1, parts[0]).toISOString();
-}
-
 export type Student = {
   index: number;
+  creationTime: string;
+  creationDate: string;
+  firstName: string;
+  lastName: string;
   name: string;
-  city: string;
-  grade: string;
-  subjects: string;
-  phone: string;
-  teacher: string;
-  details: string;
-  hours: string;
-  comment: string;
-  joinDate: string;
+  phoneNumber: string;
+  email: string;
+  gender: string;
+  studentClass: string;
+  track: string;
+  primarySubject: string;
+  secondarySubject: string;
+  mathLevel: string;
+  englishLevel: string;
+  days: string;
+  weekDaysHours: string;
+  weekendHours: string;
+  timeLength: string;
+  aboutYou: string;
+  tos: string;
 };
 
 export type Teacher = {
   index: number;
+  creationTime: string;
+  creationDate: string;
+  firstName: string;
+  lastName: string;
   name: string;
-  phone: string;
+  phoneNumber: string;
+  email: string;
+  gender: string;
+  hasTeachingCert: string;
+  teachingExperience: string;
+  track: string;
+  bagrutTrack: string;
   subjects: string;
-  hours: string;
-  background: string;
-  comment: string;
-  joinDate: string;
-  status: string;
-  student?: string;
+  mathLevel: string;
+  englishLevel: string;
+  days: string;
+  weekDaysHours: string;
+  weekendHours: string;
+  timeLength: string;
+  hasTaught: string;
+  howWasTeachingWithUs: string;
+  isOKToMakeACall: string;
+  aboutMe: string;
+  openingCallWith: string;
+  openingCallInsights: string;
+  matchBy: string;
+  matchedStudent: string;
+};
+
+export type Match = {
+  index: number;
+  student: string;
+  teacher: string;
+  subject?: string;
   coordinator: string;
+  coordinationDate: Date;
 };
 
 export async function getData() {
   try {
     const sheets = getGoogleSheets();
-    const [studentRows, teacherRows, coordinators] = await Promise.all([
-      getValues(sheets, `${studentsSheetName}!A2:U`),
-      getValues(sheets, `${teachersSheetName}!A2:AC`),
-      getValues(sheets, `${coordinatorsSheetName}!A2:B`),
-    ]);
+    const [studentRows, teacherRows, coordinators, matchesRows] =
+      await Promise.all([
+        getValues(sheets, `${studentsSheetName}!A2:U`),
+        getValues(sheets, `${teachersSheetName}!A2:AA`),
+        getValues(sheets, `${coordinatorsSheetName}!A2:C`),
+        getValues(sheets, `${matchedSheetName}!A2:E`),
+      ]);
 
     const students =
-      studentRows?.map<Student>((row, index) => ({
+      studentRows?.map<Student>((row, index) => {
+        let fieldIndex = -1;
+        return {
+          index,
+          creationDate: row[++fieldIndex],
+          creationTime: row[++fieldIndex],
+          firstName: row[++fieldIndex],
+          lastName: row[++fieldIndex],
+          name: row[++fieldIndex],
+          phoneNumber: row[++fieldIndex],
+          email: row[++fieldIndex],
+          gender: row[++fieldIndex],
+          studentClass: row[++fieldIndex],
+          track: row[++fieldIndex],
+          primarySubject: row[++fieldIndex],
+          secondarySubject: row[++fieldIndex],
+          mathLevel: row[++fieldIndex],
+          englishLevel: row[++fieldIndex],
+          days: row[++fieldIndex],
+          weekDaysHours: row[++fieldIndex],
+          weekendHours: row[++fieldIndex],
+          timeLength: row[++fieldIndex],
+          aboutYou: row[++fieldIndex],
+          tos: row[++fieldIndex],
+        };
+      }) ?? [];
+
+    const teachers = teacherRows?.map<Teacher>((row, index) => {
+      let fieldIndex = -1;
+      return {
         index,
-        name: row[0],
-        city: row[1],
-        grade: row[2] || '',
-        subjects: row[12] || '',
-        phone: fixPhone(row[13]),
-        teacher: row[14],
-        details: row[16],
-        hours: row[17],
-        comment: row[19],
-        joinDate: parseDate(row[20]),
-      })) ?? [];
+        creationDate: row[++fieldIndex],
+        creationTime: row[++fieldIndex],
+        firstName: row[++fieldIndex],
+        lastName: row[++fieldIndex],
+        name: row[++fieldIndex],
+        phoneNumber: fixPhone(row[++fieldIndex]),
+        email: row[++fieldIndex],
+        gender: row[++fieldIndex],
+        hasTeachingCert: row[++fieldIndex],
+        teachingExperience: row[++fieldIndex],
+        track: row[++fieldIndex],
+        bagrutTrack: row[++fieldIndex],
+        subjects: row[++fieldIndex],
+        mathLevel: row[++fieldIndex],
+        englishLevel: row[++fieldIndex],
+        days: row[++fieldIndex],
+        weekDaysHours: row[++fieldIndex],
+        weekendHours: row[++fieldIndex],
+        timeLength: row[++fieldIndex],
+        hasTaught: row[++fieldIndex],
+        howWasTeachingWithUs: row[++fieldIndex],
+        isOKToMakeACall: row[++fieldIndex],
+        aboutMe: row[++fieldIndex],
+        openingCallWith: row[++fieldIndex],
+        openingCallInsights: row[++fieldIndex],
+        matchBy: row[++fieldIndex],
+        matchedStudent: row[++fieldIndex],
+      };
+    });
 
-    const teachers = teacherRows?.map<Teacher>((row, index) => ({
-      index,
-      name: row[0],
-      phone: fixPhone(row[1]),
-      subjects: row[15]?.replace(/\\ [A-Z]*/gi, '') || '',
-      hours: row[19],
-      background: row[20],
-      comment: row[22],
-      joinDate: parseDate(row[25]),
-      status: row[27],
-      coordinator: row[28],
-    }));
+    const matches = matchesRows?.map<Match>((row, index) => {
+      let fieldIndex = -1;
+      return {
+        index,
+        student: row[++fieldIndex],
+        teacher: row[++fieldIndex],
+        subject: row[++fieldIndex],
+        coordinator: row[++fieldIndex],
+        coordinationDate: new Date(row[++fieldIndex]),
+      };
+    });
 
-    return { students, teachers, coordinators };
+    return { students, teachers, coordinators, matches };
   } catch (err) {
     console.error('Failed to get list of names', err);
     throw err;
