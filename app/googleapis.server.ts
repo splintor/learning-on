@@ -91,6 +91,7 @@ export type Teacher = {
   openingCallInsights: string;
   matchBy: string;
   matchedStudent: string;
+  matchedSubject: string;
 };
 
 export type Match = {
@@ -190,6 +191,7 @@ export async function getData() {
         openingCallInsights: row[++fieldIndex],
         matchBy: row[++fieldIndex],
         matchedStudent: row[++fieldIndex],
+        matchedSubject: row[++fieldIndex],
       };
     });
 
