@@ -469,7 +469,9 @@ export default function Index() {
                         >
                           {s.name}
                         </a>
-                        <span className="grade">({s.studentClass})</span>
+                        <span className="grade">
+                          ({s.city}, {s.studentClass})
+                        </span>
                       </div>
                       <div className="details">
                         <div>{s.primarySubject}</div>

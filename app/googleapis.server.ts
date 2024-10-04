@@ -2,7 +2,9 @@ import google from '@googleapis/sheets';
 import { GoogleAuth } from 'google-auth-library';
 
 const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-const studentsSheetName = 'תלמידים - נתיב העשרה';
+const nativStudentsSheetName = 'תלמידים - נתיב העשרה';
+const kfarAzaStudentsSheetName = 'תלמידים - כפר עזה';
+const nahalOzStudentsSheetName = 'תלמידים - נחל עוז';
 const teachersSheetName = 'מורים';
 const coordinatorsSheetName = 'מצוותים';
 const matchedSheetName = 'שיבוצים';
@@ -27,8 +29,17 @@ type Sheets = ReturnType<typeof getGoogleSheets>;
 const fixPhone = (phone: string | undefined) =>
   phone?.replace(/[^\d+-]/g, '').replace(/^([1-9])/, '0$1') ?? '';
 
+type CityName = 'נתיב העשרה' | 'כפר עזה' | 'נחל עוז';
+
+const citySheetName: Record<CityName, string> = {
+  'נתיב העשרה': nativStudentsSheetName,
+  'כפר עזה': kfarAzaStudentsSheetName,
+  'נחל עוז': nahalOzStudentsSheetName,
+};
+
 export type Student = {
   index: number;
+  city: CityName;
   creationTime: string;
   creationDate: string;
   firstName: string;
@@ -94,19 +105,31 @@ export type Match = {
 export async function getData() {
   try {
     const sheets = getGoogleSheets();
-    const [studentRows, teacherRows, coordinators, matchesRows] =
-      await Promise.all([
-        getValues(sheets, `${studentsSheetName}!A2:U`),
-        getValues(sheets, `${teachersSheetName}!A2:AA`),
-        getValues(sheets, `${coordinatorsSheetName}!A2:C`),
-        getValues(sheets, `${matchedSheetName}!A2:E`),
-      ]);
+    const [
+      nativStudentRows,
+      kfarAzaStudentRows,
+      nahalOzStudentRows,
+      teacherRows,
+      coordinators,
+      matchesRows,
+    ] = await Promise.all([
+      getValues(sheets, `${nativStudentsSheetName}!A2:U`),
+      getValues(sheets, `${kfarAzaStudentsSheetName}!A2:U`),
+      getValues(sheets, `${nahalOzStudentsSheetName}!A2:U`),
+      getValues(sheets, `${teachersSheetName}!A2:AA`),
+      getValues(sheets, `${coordinatorsSheetName}!A2:C`),
+      getValues(sheets, `${matchedSheetName}!A2:E`),
+    ]);
 
-    const students =
+    const parseStudentRows = (
+      studentRows: any[][] | null | undefined,
+      city: CityName
+    ) =>
       studentRows?.map<Student>((row, index) => {
         let fieldIndex = -1;
         return {
           index,
+          city,
           creationDate: row[++fieldIndex],
           creationTime: row[++fieldIndex],
           firstName: row[++fieldIndex],
@@ -129,6 +152,12 @@ export async function getData() {
           tos: row[++fieldIndex],
         };
       }) ?? [];
+
+    const students = [
+      ...parseStudentRows(nativStudentRows, 'נתיב העשרה'),
+      ...parseStudentRows(kfarAzaStudentRows, 'כפר עזה'),
+      ...parseStudentRows(nahalOzStudentRows, 'נחל עוז'),
+    ];
 
     const teachers = teacherRows?.map<Teacher>((row, index) => {
       let fieldIndex = -1;
@@ -217,9 +246,11 @@ export async function assignTeacher({
 }
 
 export async function assignStudent({
+  studentCity,
   studentIndex,
   assignValue,
 }: {
+  studentCity: CityName;
   studentIndex: number;
   assignValue: string;
 }) {
@@ -227,7 +258,7 @@ export async function assignStudent({
     const sheets = getGoogleSheets();
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `${studentsSheetName}!O${studentIndex + 2}`,
+      range: `${citySheetName[studentCity]}!O${studentIndex + 2}`,
       valueInputOption: 'RAW',
       requestBody: { values: [[assignValue]] },
     });
