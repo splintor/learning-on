@@ -106,6 +106,16 @@ const studentFirstAttachedTeacher = (s: Student) => s.matchedTeacher;
 const formatJoinDate = (sOrT: Pick<Student | Teacher, 'creationTime'>) =>
   new Date(sOrT.creationTime).toLocaleDateString();
 
+const isMale = (sOrT: Pick<Student | Teacher, 'gender'>) =>
+  sOrT.gender === 'זכר';
+
+const teacherStatus = (t: Teacher) =>
+  isTeacherAssigned(t)
+    ? 'משובץ'
+    : isTeacherAvailable(t)
+    ? `${isMale(t) ? 'שוחח' : 'שוחחה'} עם ${t.openingCallWith}`
+    : `לא ${isMale(t) ? 'ביצע' : 'ביצעה'} שיחת פתיחה`;
+
 const formatHour = (h: string) =>
   h
     .replaceAll(/[\d:-]+ /g, '')
@@ -397,13 +407,7 @@ export default function Index() {
                             }
                           </div>
                           <div className="leftBottom">
-                            <div className="status">
-                              {isTeacherAssigned(t)
-                                ? 'משובץ'
-                                : isTeacherAvailable(t)
-                                ? 'זמין'
-                                : 'לא זמין'}
-                            </div>
+                            <div className="status">{teacherStatus(t)}</div>
                             {!isTeacherAssigned(t) && (
                               <div>
                                 {isTeacherFetcherIdle ? (
@@ -682,13 +686,7 @@ export default function Index() {
                     }}
                   >
                     <div>{t.name}</div>
-                    <div className="status">
-                      {isTeacherAssigned(t)
-                        ? 'משובץ'
-                        : isTeacherAvailable(t)
-                        ? 'זמין'
-                        : 'לא זמין'}
-                    </div>
+                    <div className="status">{teacherStatus(t)}</div>
                   </div>
                 )
             )}
