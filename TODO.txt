@@ -1,3 +1,6 @@
+1. Assign opening call to teacher
+2. Assign a student to a teacher
+
 2. Change links to icon buttons
 3. Enable multiple teachers for a student
 4. Read Amit's doc
