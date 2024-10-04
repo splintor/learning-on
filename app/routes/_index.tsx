@@ -9,7 +9,7 @@ import React, {
 import type { LinksFunction, MetaFunction } from '@vercel/remix';
 import { Form, useFetcher, useLoaderData } from '@remix-run/react';
 import { assignStudent, assignTeacher, getData } from '~/googleapis.server';
-import type { Student, Teacher } from '~/googleapis.server';
+import type { Student, Teacher, CityName } from '~/googleapis.server';
 import { SocialsProvider } from 'remix-auth-socials';
 import { authenticator } from '~/auth.server';
 import styles from './main.css?url';
@@ -72,11 +72,12 @@ export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const teacherIndex = Number(formData.get('teacherIndex'));
   const studentIndex = Number(formData.get('studentIndex'));
+  const studentCity = String(formData.get('studentCity')) as CityName;
   const assignValue = String(formData.get('assignValue'));
   if (teacherIndex) {
     await assignTeacher({ teacherIndex, assignValue });
   } else {
-    await assignStudent({ studentIndex, assignValue });
+    await assignStudent({ studentCity, studentIndex, assignValue });
   }
   return null;
 }
@@ -293,7 +294,7 @@ export default function Index() {
     e.stopPropagation();
     e.preventDefault();
     studentFetcher.submit(
-      { studentIndex: s.index, assignValue },
+      { studentIndex: s.index, studentCity: s.city, assignValue },
       { method: 'POST' }
     );
 

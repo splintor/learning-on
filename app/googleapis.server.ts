@@ -29,7 +29,7 @@ type Sheets = ReturnType<typeof getGoogleSheets>;
 const fixPhone = (phone: string | undefined) =>
   phone?.replace(/[^\d+-]/g, '').replace(/^([1-9])/, '0$1') ?? '';
 
-type CityName = 'נתיב העשרה' | 'כפר עזה' | 'נחל עוז';
+export type CityName = 'נתיב העשרה' | 'כפר עזה' | 'נחל עוז';
 
 const citySheetName: Record<CityName, string> = {
   'נתיב העשרה': nativStudentsSheetName,
