@@ -86,6 +86,29 @@ const Available = 'זמין';
 const formatJoinDate = (sOrT: Pick<Student | Teacher, 'creationTime'>) =>
   new Date(sOrT.creationTime).toLocaleDateString();
 
+const formatHour = (h: string) =>
+  h
+    .replaceAll(/[\d:-]+ /g, '')
+    .split('; ')
+    .sort((a, b) => (a === 'בוקר' || b === 'ערב' ? -1 : 1))
+    .join(', ');
+
+function formatHours(
+  sOrT: Pick<Student | Teacher, 'weekendHours' | 'weekDaysHours'>
+) {
+  const weekdays = formatHour(sOrT.weekDaysHours);
+  const weekend = formatHour(sOrT.weekendHours);
+
+  return weekdays === weekend ? (
+    <div>{weekdays}</div>
+  ) : (
+    <>
+      <div>{weekdays && 'א-ה: ' + weekdays}</div>
+      <div>{weekend && 'סופ"ש: ' + weekend}</div>
+    </>
+  );
+}
+
 function studentMatchForTeacher(
   student: Student | null,
   teacher: Teacher | null
@@ -346,8 +369,7 @@ export default function Index() {
                           </div>
                           <div className="details">
                             <div>{t.subjects}</div>
-                            <div>{t.weekDaysHours}</div>
-                            <div>{t.weekendHours}</div>
+                            {formatHours(t)}
                           </div>
                         </div>
                         <div className="left">
@@ -452,9 +474,7 @@ export default function Index() {
                       <div className="details">
                         <div>{s.primarySubject}</div>
                         <div>{s.secondarySubject}</div>
-                        <div>{s.weekDaysHours}</div>
-                        <div>{s.weekendHours}</div>
-                        <div>{s.aboutYou}</div>
+                        {formatHours(s)}
                       </div>
                     </div>
                     <div className="left">
