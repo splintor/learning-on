@@ -7,7 +7,7 @@ const kfarAzaStudentsSheetName = 'תלמידים - כפר עזה';
 const nahalOzStudentsSheetName = 'תלמידים - נחל עוז';
 const teachersSheetName = 'מורים';
 const coordinatorsSheetName = 'מצוותים';
-const matchedSheetName = 'שיבוצים';
+// const matchedSheetName = 'שיבוצים';
 
 function getGoogleSheets() {
   const auth = new GoogleAuth({
@@ -60,6 +60,7 @@ export type Student = {
   timeLength: string;
   aboutYou: string;
   tos: string;
+  matchedTeacher: string;
 };
 
 export type Teacher = {
@@ -94,14 +95,14 @@ export type Teacher = {
   matchedSubject: string;
 };
 
-export type Match = {
-  index: number;
-  student: string;
-  teacher: string;
-  subject?: string;
-  coordinator: string;
-  coordinationDate: Date;
-};
+// export type Match = {
+//   index: number;
+//   student: string;
+//   teacher: string;
+//   subject?: string;
+//   coordinator: string;
+//   coordinationDate: Date;
+// };
 
 export async function getData() {
   try {
@@ -112,14 +113,14 @@ export async function getData() {
       nahalOzStudentRows,
       teacherRows,
       coordinators,
-      matchesRows,
+      // matchesRows,
     ] = await Promise.all([
       getValues(sheets, `${nativStudentsSheetName}!A2:U`),
       getValues(sheets, `${kfarAzaStudentsSheetName}!A2:U`),
       getValues(sheets, `${nahalOzStudentsSheetName}!A2:U`),
       getValues(sheets, `${teachersSheetName}!A2:AA`),
       getValues(sheets, `${coordinatorsSheetName}!A2:C`),
-      getValues(sheets, `${matchedSheetName}!A2:E`),
+      // getValues(sheets, `${matchedSheetName}!A2:E`),
     ]);
 
     const parseStudentRows = (
@@ -151,6 +152,7 @@ export async function getData() {
           timeLength: row[++fieldIndex],
           aboutYou: row[++fieldIndex],
           tos: row[++fieldIndex],
+          matchedTeacher: row[++fieldIndex],
         };
       }) ?? [];
 
@@ -195,19 +197,19 @@ export async function getData() {
       };
     });
 
-    const matches = matchesRows?.map<Match>((row, index) => {
-      let fieldIndex = -1;
-      return {
-        index,
-        student: row[++fieldIndex],
-        teacher: row[++fieldIndex],
-        subject: row[++fieldIndex],
-        coordinator: row[++fieldIndex],
-        coordinationDate: new Date(row[++fieldIndex]),
-      };
-    });
+    // const matches = matchesRows?.map<Match>((row, index) => {
+    //   let fieldIndex = -1;
+    //   return {
+    //     index,
+    //     student: row[++fieldIndex],
+    //     teacher: row[++fieldIndex],
+    //     subject: row[++fieldIndex],
+    //     coordinator: row[++fieldIndex],
+    //     coordinationDate: new Date(row[++fieldIndex]),
+    //   };
+    // });
 
-    return { students, teachers, coordinators, matches };
+    return { students, teachers, coordinators };
   } catch (err) {
     console.error('Failed to get list of names', err);
     throw err;

@@ -43,13 +43,12 @@ export async function loader({ request }: { request: Request }) {
       userIsFemale: false,
       ownerEmail,
       ownerPhone,
-      matches: [],
       teachers: [],
       students: [],
     };
   }
 
-  const { matches, coordinators, teachers, students } = await getData();
+  const { coordinators, teachers, students } = await getData();
   const userRow = coordinators?.find(c => c[1] === userEmail);
   const userName = userRow?.[0];
   const userIsFemale = userRow?.[2] === 'מצוותת';
@@ -61,7 +60,6 @@ export async function loader({ request }: { request: Request }) {
     userIsFemale,
     ownerEmail,
     ownerPhone,
-    matches,
     teachers,
     students,
   };
@@ -83,6 +81,27 @@ export async function action({ request }: { request: Request }) {
 }
 
 const Available = 'זמין';
+
+const isTeacherAvailable = (t: Teacher) => Boolean(t.openingCallWith);
+const isTeacherAssigned = (t: Teacher) => Boolean(t.matchedStudent);
+const getTeacherWhatsappMsg = (t: Teacher) =>
+  `שלום ${t.name}, האם אפשר לשבץ אליך תלמידים לשיעורים פרטיים?`;
+const getTeacherClass = (
+  t: Teacher,
+  selectedTeacher: Teacher | null | undefined
+) =>
+  [
+    t === selectedTeacher ? 'selected' : '',
+    isTeacherAssigned(t)
+      ? 'assigned'
+      : isTeacherAvailable(t)
+      ? 'available'
+      : '',
+  ].join(' ');
+
+const isStudentAvailable = (_s: Student) => true;
+const isStudentAssigned = (s: Student) => Boolean(s.matchedTeacher);
+const studentFirstAttachedTeacher = (s: Student) => s.matchedTeacher;
 
 const formatJoinDate = (sOrT: Pick<Student | Teacher, 'creationTime'>) =>
   new Date(sOrT.creationTime).toLocaleDateString();
@@ -148,17 +167,13 @@ export default function Index() {
   const isTeacherFetcherIdle = teacherFetcher.state === 'idle';
   const studentFetcher = useFetcher({ key: 'assign-student' });
   const isStudentFetcherIdle = studentFetcher.state === 'idle';
-  const {
-    matches,
-    teachers,
-    students,
-    user,
-    userEmail,
-    ownerEmail,
-    ownerPhone,
-  } = useLoaderData<typeof loader>();
-  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>();
+  const { teachers, students, user, userEmail, ownerEmail, ownerPhone } =
+    useLoaderData<typeof loader>();
   const [includeAssigned, setIncludeAssigned] = useState(false);
+  const [displayedTeachers, setDisplayedTeachers] = useState<Teacher[] | null>(
+    teachers as Teacher[]
+  );
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>();
   const [matchingStudents, setMatchingStudents] = useState<Student[]>([]);
   const selectedTeacherRef = useRef<HTMLDivElement>(null);
   const studentsSwipeRef = useRef<HTMLDivElement>(null);
@@ -173,37 +188,18 @@ export default function Index() {
   );
   const [teachersSearch, setTeachersSearch] = useState<string>();
 
-  const isTeacherAvailable = (t: Teacher) =>
-    matches?.some(m => m?.teacher === t.name);
-  const isTeacherAssigned = (t: Teacher) => Boolean(t.openingCallWith);
-  const getTeacherWhatsappMsg = (t: Teacher) =>
-    `שלום ${t.name}, האם אפשר לשבץ אליך תלמידים לשיעורים פרטיים?`;
-  const getTeacherClass = (
-    t: Teacher,
-    selectedTeacher: Teacher | null | undefined
-  ) =>
-    [
-      t === selectedTeacher ? 'selected' : '',
-      isTeacherAssigned(t)
-        ? 'assigned'
-        : isTeacherAvailable(t)
-        ? 'available'
-        : '',
-    ].join(' ');
-  const teachersToShow =
-    (includeAssigned
-      ? teachers
-      : teachers?.filter(
-          t => !t || !isTeacherAssigned(t) || t.name === selectedTeacher?.name
-        )) ?? [];
-
-  const isStudentAvailable = (_s: Student) => true;
-  const isStudentUnavailable = (s: Student) =>
-    matches?.some(m => m?.student === s?.name);
-  const isStudentAssigned = (s: Student) =>
-    !isStudentAvailable(s) && !isStudentUnavailable(s);
-  const studentFirstAttachedTeacher = (s: Student) =>
-    matches?.find(m => m?.student === s?.name)?.teacher;
+  useEffect(() => {
+    if (teachers) {
+      setDisplayedTeachers(
+        (includeAssigned
+          ? (teachers as Teacher[])
+          : (teachers as Teacher[])?.filter(
+              t =>
+                !t || !isTeacherAssigned(t) || t.name === selectedTeacher?.name
+            )) ?? []
+      );
+    }
+  }, [includeAssigned, selectedTeacher?.name, teachers]);
 
   const getStudentWhatsappMsg = (s: Student) =>
     `שלום ${s.name}, האם אפשר לשבץ אליך מורה לשיעורים פרטיים?`;
@@ -217,12 +213,12 @@ export default function Index() {
   useEffect(() => {
     if (selectedTeacher) {
       setSelectedTeacher(
-        teachersToShow?.find(t => t?.name === selectedTeacher.name)
+        displayedTeachers?.find(t => t?.name === selectedTeacher.name)
       );
     } else if (selectedTeacher !== null) {
-      setSelectedTeacher(teachersToShow?.[0]);
+      setSelectedTeacher(displayedTeachers?.[0]);
     }
-  }, [selectedTeacher, teachers]);
+  }, [displayedTeachers, selectedTeacher, teachers]);
 
   useEffect(() => {
     if (teachers?.length === 0 && !includeAssigned) {
@@ -253,13 +249,11 @@ export default function Index() {
     if (!selectedTeacher) {
       setMatchingStudents([]);
     } else {
-      const teacherMatches =
-        matches?.filter(m => m?.teacher === selectedTeacher.name) ?? [];
-      const assignedStudents = teacherMatches.map(
-        m => students.find(s => s?.name === m?.student)!
-      );
-      if (assignedStudents.length) {
-        setMatchingStudents(assignedStudents);
+      const matchedStudent =
+        selectedTeacher.matchedStudent &&
+        students.find(s => s?.name === selectedTeacher.matchedStudent);
+      if (matchedStudent) {
+        setMatchingStudents([matchedStudent]);
       } else {
         const bestMatchingStudents = students
           .filter(s => !s || !isStudentAssigned(s))
@@ -273,7 +267,7 @@ export default function Index() {
         setMatchingStudents(bestMatchingStudents);
       }
     }
-  }, [matches, selectedTeacher, students]);
+  }, [selectedTeacher, students]);
 
   useEffect(() => {
     if (studentsSwipeRef.current) {
@@ -325,9 +319,9 @@ export default function Index() {
   return (
     <div className="root">
       <h1 onClick={toggleAboutModalOpen}>לומדים הלאה - מערכת שיבוץ</h1>
-      {teachers ? (
+      {displayedTeachers ? (
         <div className="main">
-          {teachers.length > 0 && (
+          {displayedTeachers.length > 0 && (
             <div className="teachers-section">
               <div className="teachers-header">
                 <a
@@ -341,11 +335,11 @@ export default function Index() {
                 </a>
               </div>
               <div className="teachers swipe-list">
-                {teachers.map(
+                {displayedTeachers.map(
                   t =>
                     t && (
                       <div
-                        key={t.index}
+                        key={`TL-${t.index}`}
                         className={getTeacherClass(t, selectedTeacher)}
                         onClick={() =>
                           setSelectedTeacher(current =>
@@ -371,6 +365,9 @@ export default function Index() {
                           <div className="details">
                             <div>{t.subjects}</div>
                             {formatHours(t)}
+                          </div>
+                          <div className="insights">
+                            {t.openingCallInsights}
                           </div>
                         </div>
                         <div className="left">
@@ -461,7 +458,10 @@ export default function Index() {
               </div>
               <div className="students swipe-list" ref={studentsSwipeRef}>
                 {matchingStudents.map(s => (
-                  <div key={s.index} className={getStudentClass(s)}>
+                  <div
+                    key={`S-${s.city}-${s.index}`}
+                    className={getStudentClass(s)}
+                  >
                     <div className="right">
                       <div className="name">
                         <a
@@ -656,8 +656,8 @@ export default function Index() {
           />
         </div>
         <div className="list">
-          {teachersToShow
-            .filter(
+          {teachers
+            ?.filter(
               t =>
                 !teachersSearch ||
                 teachersSearch
@@ -669,10 +669,13 @@ export default function Index() {
               t =>
                 t && (
                   <div
-                    key={t.index}
+                    key={`T-${t.index}`}
                     onClick={() => {
                       toggleTeachersListModalOpen();
-                      if (isTeacherAssigned(t) && !teachersToShow.includes(t)) {
+                      if (
+                        isTeacherAssigned(t) &&
+                        !displayedTeachers?.includes(t)
+                      ) {
                         setIncludeAssigned(true);
                       }
                       setSelectedTeacher(t);
