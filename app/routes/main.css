@@ -161,6 +161,10 @@ h2 button {
   .joinDate {
     font-size: 0.8em;
   }
+
+  .insights {
+    color: darkgreen;
+  }
 }
 
 .toast {
