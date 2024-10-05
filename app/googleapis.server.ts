@@ -119,7 +119,7 @@ export async function getData() {
       getValues(sheets, `${kfarAzaStudentsSheetName}!A2:U`),
       getValues(sheets, `${nahalOzStudentsSheetName}!A2:U`),
       getValues(sheets, `${teachersSheetName}!A2:AA`),
-      getValues(sheets, `${coordinatorsSheetName}!A2:C`),
+      getValues(sheets, `${coordinatorsSheetName}!A2:D`),
       // getValues(sheets, `${matchedSheetName}!A2:E`),
     ]);
 

@@ -35,33 +35,38 @@ export async function loader({ request }: { request: Request }) {
   const userEmail = user?._json.email;
   const ownerEmail = process.env.OWNER_EMAIL;
   const ownerPhone = process.env.OWNER_PHONE;
-  if (!userEmail) {
-    return {
-      user,
-      userEmail,
-      userName: '?',
-      userIsFemale: false,
-      ownerEmail,
-      ownerPhone,
-      teachers: [],
-      students: [],
-    };
-  }
 
-  const { coordinators, teachers, students } = await getData();
-  const userRow = coordinators?.find(c => c[1] === userEmail);
-  const userName = userRow?.[0];
-  const userIsFemale = userRow?.[2] === 'מצוותת';
+  if (userEmail) {
+    const { coordinators, teachers, students } = await getData();
+    const userRow = coordinators?.find(c => c[2] === userEmail);
+    if (userRow) {
+      const userFullName = userRow[0];
+      const userName = userRow[1];
+      const userIsFemale = userRow[3] === 'מצוותת';
+
+      return {
+        user,
+        userEmail,
+        userName,
+        userFullName,
+        userIsFemale,
+        ownerEmail,
+        ownerPhone,
+        teachers,
+        students,
+      };
+    }
+  }
 
   return {
     user,
     userEmail,
-    userName,
-    userIsFemale,
+    userName: '',
+    userIsFemale: false,
     ownerEmail,
     ownerPhone,
-    teachers,
-    students,
+    teachers: [],
+    students: [],
   };
 }
 
@@ -177,8 +182,15 @@ export default function Index() {
   const isTeacherFetcherIdle = teacherFetcher.state === 'idle';
   const studentFetcher = useFetcher({ key: 'assign-student' });
   const isStudentFetcherIdle = studentFetcher.state === 'idle';
-  const { teachers, students, user, userEmail, ownerEmail, ownerPhone } =
-    useLoaderData<typeof loader>();
+  const {
+    teachers,
+    students,
+    user,
+    userEmail,
+    userName,
+    ownerEmail,
+    ownerPhone,
+  } = useLoaderData<typeof loader>();
   const [includeAssigned, setIncludeAssigned] = useState(false);
   const [displayedTeachers, setDisplayedTeachers] = useState<Teacher[] | null>(
     teachers as Teacher[]
@@ -451,7 +463,6 @@ export default function Index() {
               </div>
             </div>
           )}
-
           {matchingStudents.length > 0 && (
             <div className="students-section">
               <div className="students-header">
@@ -570,18 +581,14 @@ export default function Index() {
               </div>
             </div>
           )}
-
-          {user && !teachers?.length && (
+          {user && !userName && (
             <Form method="post" action={`/logout`} className="message warning">
               <h2>
-                <div>
-                  שלום {user.displayName}, אין מורים שמצוותים אליך במערכת.
-                </div>
+                <div>שלום {user.displayName}, אינך מוכר כמצוות במערכת.</div>
                 <button>יציאה</button>
               </h2>
             </Form>
           )}
-
           {!user && (
             <Form
               method="post"
