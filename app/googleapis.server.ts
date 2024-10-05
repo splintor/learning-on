@@ -137,7 +137,7 @@ export async function getData() {
           firstName: row[++fieldIndex],
           lastName: row[++fieldIndex],
           name: row[++fieldIndex],
-          phoneNumber: row[++fieldIndex],
+          phoneNumber: fixPhone(row[++fieldIndex]),
           email: row[++fieldIndex],
           gender: row[++fieldIndex],
           studentClass: row[++fieldIndex],
