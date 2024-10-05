@@ -1,4 +1,5 @@
 import React, {
+  type BaseSyntheticEvent,
   useReducer,
   useState,
   type MouseEvent,
@@ -8,7 +9,12 @@ import React, {
 } from 'react';
 import type { LinksFunction, MetaFunction } from '@vercel/remix';
 import { Form, useFetcher, useLoaderData } from '@remix-run/react';
-import { assignStudent, assignTeacher, getData } from '~/googleapis.server';
+import {
+  assignStudent,
+  assignTeacher,
+  getData,
+  updateOpeningCall,
+} from '~/googleapis.server';
 import type { Student, Teacher, CityName } from '~/googleapis.server';
 import { SocialsProvider } from 'remix-auth-socials';
 import { authenticator } from '~/auth.server';
@@ -29,6 +35,12 @@ export const meta: MetaFunction = () => {
     },
   ];
 };
+
+const CloseButton = ({ onClick }: { onClick: () => void }) => (
+  <div className="close" onClick={onClick}>
+    <img alt="סגור" src="/close.svg" />
+  </div>
+);
 
 export async function loader({ request }: { request: Request }) {
   const user = await authenticator.isAuthenticated(request);
@@ -73,14 +85,29 @@ export async function loader({ request }: { request: Request }) {
 // noinspection JSUnusedGlobalSymbols
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
+  const methodName = String(formData.get('methodName'));
   const teacherIndex = Number(formData.get('teacherIndex'));
   const studentIndex = Number(formData.get('studentIndex'));
   const studentCity = String(formData.get('studentCity')) as CityName;
   const assignValue = String(formData.get('assignValue'));
-  if (teacherIndex) {
-    await assignTeacher({ teacherIndex, assignValue });
-  } else {
-    await assignStudent({ studentCity, studentIndex, assignValue });
+  const openingCallInsights = String(formData.get('openingCallInsights'));
+  const userName = String(formData.get('userName'));
+  switch (methodName) {
+    case 'updateOpeningCall':
+      await updateOpeningCall({
+        teacherIndex,
+        openingCallInsights,
+        userName,
+      });
+      break;
+
+    case 'assignTeacher':
+      await assignTeacher({ teacherIndex, assignValue });
+      break;
+
+    case 'assignStudent':
+      await assignStudent({ studentCity, studentIndex, assignValue });
+      break;
   }
   return null;
 }
@@ -144,6 +171,8 @@ function formatHours(
   );
 }
 
+const useToggle = () => useReducer(state => !state, false);
+
 function studentMatchForTeacher(
   student: Student | null,
   teacher: Teacher | null
@@ -178,6 +207,7 @@ function studentMatchForTeacher(
 }
 
 export default function Index() {
+  const openingCallFetcher = useFetcher({ key: 'opening-call' });
   const teacherFetcher = useFetcher({ key: 'assign-teacher' });
   const isTeacherFetcherIdle = teacherFetcher.state === 'idle';
   const studentFetcher = useFetcher({ key: 'assign-student' });
@@ -200,15 +230,12 @@ export default function Index() {
   const selectedTeacherRef = useRef<HTMLDivElement>(null);
   const studentsSwipeRef = useRef<HTMLDivElement>(null);
   const [studentAssignToast, setStudentAssignToast] = useState<ReactNode>();
-  const [isAboutModalOpen, toggleAboutModalOpen] = useReducer(
-    state => !state,
-    false
-  );
-  const [isTeachersListModalOpen, toggleTeachersListModalOpen] = useReducer(
-    state => !state,
-    false
-  );
+  const [isAboutModalOpen, toggleAboutModalOpen] = useToggle();
+  const [isTeachersListModalOpen, toggleTeachersListModalOpen] = useToggle();
   const [teachersSearch, setTeachersSearch] = useState<string>();
+  const [showOpeningCallModal, toggleShowOpeningCallModal] = useToggle();
+  const [openingCallDetails, setOpeningCallDetails] = useState<Teacher>();
+  const [openingCallInsights, setOpeningCallInsights] = useState('');
 
   useEffect(() => {
     if (teachers) {
@@ -268,6 +295,30 @@ export default function Index() {
   }, [studentAssignToast, isTeacherFetcherIdle]);
 
   useEffect(() => {
+    const isInSearch = () =>
+      document.activeElement?.closest('.search') &&
+      (document.activeElement as HTMLInputElement)?.value;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isInSearch()) {
+        if (isAboutModalOpen) toggleAboutModalOpen();
+        if (isTeachersListModalOpen) toggleTeachersListModalOpen();
+        if (showOpeningCallModal) toggleShowOpeningCallModal();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [
+    isAboutModalOpen,
+    isTeachersListModalOpen,
+    showOpeningCallModal,
+    toggleAboutModalOpen,
+    toggleShowOpeningCallModal,
+    toggleTeachersListModalOpen,
+  ]);
+
+  useEffect(() => {
     if (!selectedTeacher) {
       setMatchingStudents([]);
     } else {
@@ -297,20 +348,44 @@ export default function Index() {
     }
   }, [selectedTeacher?.name]);
 
-  function assignTeacher(e: MouseEvent, t: Teacher, assignValue: string) {
+  function updateOpeningCall(
+    e: BaseSyntheticEvent,
+    teacherIndex: number,
+    openingCallInsights: string,
+    userName: string
+  ) {
     e.stopPropagation();
     e.preventDefault();
-    teacherFetcher.submit(
-      { teacherIndex: t.index, assignValue },
+    openingCallFetcher.submit(
+      {
+        methodName: 'updateOpeningCall',
+        teacherIndex,
+        openingCallInsights,
+        userName,
+      },
       { method: 'POST' }
     );
   }
+
+  // function assignTeacher(e: MouseEvent, t: Teacher, assignValue: string) {
+  //   e.stopPropagation();
+  //   e.preventDefault();
+  //   teacherFetcher.submit(
+  //     { methodName: 'assignTeacher', teacherIndex: t.index, assignValue },
+  //     { method: 'POST' }
+  //   );
+  // }
 
   function assignStudent(e: MouseEvent, s: Student, assignValue: string) {
     e.stopPropagation();
     e.preventDefault();
     studentFetcher.submit(
-      { studentIndex: s.index, studentCity: s.city, assignValue },
+      {
+        methodName: 'assignStudent',
+        studentIndex: s.index,
+        studentCity: s.city,
+        assignValue,
+      },
       { method: 'POST' }
     );
 
@@ -419,32 +494,20 @@ export default function Index() {
                             }
                           </div>
                           <div className="leftBottom">
-                            <div className="status">{teacherStatus(t)}</div>
-                            {!isTeacherAssigned(t) && (
-                              <div>
-                                {isTeacherFetcherIdle ? (
-                                  isTeacherAvailable(t) ? (
-                                    <a
-                                      href={'#markAsAvailable'}
-                                      onClick={e => assignTeacher(e, t, '')}
-                                    >
-                                      סמן כלא זמין
-                                    </a>
-                                  ) : (
-                                    <a
-                                      href={'#markAsUnavailable'}
-                                      onClick={e =>
-                                        assignTeacher(e, t, Available)
-                                      }
-                                    >
-                                      סמן כזמין
-                                    </a>
-                                  )
-                                ) : (
-                                  <div>מעדכן...</div>
-                                )}
-                              </div>
-                            )}
+                            <div className="status">
+                              <span>{teacherStatus(t)}</span>
+                              <a
+                                href={'#editOpeningCall'}
+                                onClick={e => {
+                                  e.preventDefault();
+                                  setOpeningCallDetails(t);
+                                  setOpeningCallInsights(t.openingCallInsights);
+                                  toggleShowOpeningCallModal();
+                                }}
+                              >
+                                <img alt="שבץ" src="/edit.svg" />
+                              </a>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -619,9 +682,7 @@ export default function Index() {
         <h2 className="loader">טוען נתונים...</h2>
       )}
       <div className={`about modal ${isAboutModalOpen ? 'open' : ''}`}>
-        <div className="close" onClick={toggleAboutModalOpen}>
-          <img alt="Close" src="/close.svg" />
-        </div>
+        <CloseButton onClick={toggleAboutModalOpen} />
         <h2>
           מערכת השיבוץ של מיזם{' '}
           <a href="https://www.learningon.org/">לומדים הלאה</a> נכתבה ב
@@ -653,9 +714,7 @@ export default function Index() {
           isTeachersListModalOpen ? 'open' : ''
         }`}
       >
-        <div className="close" onClick={toggleTeachersListModalOpen}>
-          <img alt="Close" src="/close.svg" />
-        </div>
+        <CloseButton onClick={toggleTeachersListModalOpen} />
         <h4>רשימת מורים</h4>
         <div className="search">
           <input
@@ -681,6 +740,7 @@ export default function Index() {
                 t && (
                   <div
                     key={`T-${t.index}`}
+                    className="teacher"
                     onClick={() => {
                       toggleTeachersListModalOpen();
                       if (
@@ -697,6 +757,51 @@ export default function Index() {
                   </div>
                 )
             )}
+        </div>
+      </div>
+      <div
+        className={`opening-call modal ${showOpeningCallModal ? 'open' : ''}`}
+      >
+        <CloseButton onClick={toggleShowOpeningCallModal} />
+        <div className="content">
+          <h2>עדכון שיחת פתיחה</h2>
+          <label>
+            <div>
+              ביצעתי שיחת פתיחה עם{' '}
+              <span className="name">{openingCallDetails?.name}</span> ואלה
+              התובנות:
+            </div>
+            <div>
+              <textarea
+                defaultValue={openingCallInsights}
+                onChange={e => setOpeningCallInsights(e.target.value)}
+              />
+            </div>
+          </label>
+          <div className="buttons">
+            <Form
+              method="post"
+              action={`/action`}
+              onSubmit={e => {
+                if (!openingCallDetails) {
+                  return;
+                }
+
+                updateOpeningCall(
+                  e,
+                  openingCallDetails.index,
+                  openingCallInsights,
+                  userName
+                );
+                openingCallDetails.openingCallWith = userName;
+                openingCallDetails.openingCallInsights = openingCallInsights;
+                toggleShowOpeningCallModal();
+              }}
+            >
+              <button className="submit">עדכן שיחת פתיחה</button>
+            </Form>
+            <button onClick={toggleShowOpeningCallModal}>ביטול</button>
+          </div>
         </div>
       </div>
       <div className="overlay"></div>

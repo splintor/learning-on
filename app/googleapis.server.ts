@@ -228,6 +228,29 @@ async function getValues(sheets: Sheets, range: string) {
   }
 }
 
+export async function updateOpeningCall({
+  teacherIndex,
+  openingCallInsights,
+  userName,
+}: {
+  teacherIndex: number;
+  openingCallInsights: string;
+  userName: string;
+}) {
+  try {
+    const sheets = getGoogleSheets();
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${teachersSheetName}!X${teacherIndex + 2}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [[userName, openingCallInsights]] },
+    });
+  } catch (err) {
+    console.error('Failed to update opening call insights', err);
+    throw err;
+  }
+}
+
 export async function assignTeacher({
   teacherIndex,
   assignValue,
