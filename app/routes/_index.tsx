@@ -692,6 +692,7 @@ export default function Index() {
             )}
         </div>
       </div>
+      <div className="overlay"></div>
     </div>
   );
 }

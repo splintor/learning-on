@@ -193,7 +193,12 @@ form.warning {
 
 .modal {
   position: fixed;
+  z-index: 1000;
   width: 100vw;
+  max-width: 800px;
+  margin-inline: auto;
+  left: 0;
+  right: 0;
   top: 70px;
   height: 0;
   overflow-y: hidden;
@@ -203,11 +208,12 @@ form.warning {
   &.open {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 70px);
+    height: calc(100% - 70px);
   }
 
   .close {
-    position: fixed;
+    position: absolute;
+    top: 5px;
     left: 10px;
   }
 
@@ -216,7 +222,6 @@ form.warning {
   }
 
   &.about {
-    z-index: 1000;
     gap: 20px;
     & form {
       display: flex;
@@ -243,9 +248,9 @@ form.warning {
     }
 
     .list {
-      width: calc(100vw - 30px);
+      width: calc(100% - 30px);
       overflow-y: scroll;
-      max-height: calc(100vh - 50px);
+      max-height: calc(100% - 50px);
     }
 
     .list > div {
@@ -262,4 +267,19 @@ form.warning {
   .whatsapp {
     vertical-align: sub;
   }
+}
+
+.modal ~ .overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  transition: height 0.5s ease-in-out;
+}
+
+.modal.open ~ .overlay {
+  height: 100vh;
 }
