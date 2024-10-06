@@ -123,6 +123,7 @@ h2 button {
 
     .status {
       display: flex;
+      justify-content: end;
       gap: 6px;
 
       span {
