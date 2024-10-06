@@ -112,8 +112,6 @@ export async function action({ request }: { request: Request }) {
   return null;
 }
 
-const Available = 'זמין';
-
 const isTeacherAvailable = (t: Teacher) => Boolean(t.openingCallWith);
 const isTeacherAssigned = (t: Teacher) => Boolean(t.matchedStudent);
 const getTeacherWhatsappMsg = (t: Teacher) =>
@@ -133,7 +131,6 @@ const getTeacherClass = (
 
 const isStudentAvailable = (_s: Student) => true;
 const isStudentAssigned = (s: Student) => Boolean(s.matchedTeacher);
-const studentFirstAttachedTeacher = (s: Student) => s.matchedTeacher;
 
 const formatJoinDate = (sOrT: Pick<Student | Teacher, 'creationTime'>) =>
   new Date(sOrT.creationTime).toLocaleDateString();
@@ -155,18 +152,47 @@ const formatHour = (h: string) =>
     .sort((a, b) => (a === 'בוקר' || b === 'ערב' ? -1 : 1))
     .join(', ');
 
-function formatHours(
-  sOrT: Pick<Student | Teacher, 'weekendHours' | 'weekDaysHours'>
-) {
-  const weekdays = formatHour(sOrT.weekDaysHours);
-  const weekend = formatHour(sOrT.weekendHours);
+const formatDays = (days: string) =>
+  days
+    .replace('ראשון', 'א')
+    .replace('שני', 'ב')
+    .replace('שלישי', 'ג')
+    .replace('רביעי', 'ד')
+    .replace('חמישי', 'ה')
+    .replace('שישי', 'ו')
+    .replace('שבת', 'ש')
+    .split('; ')
+    .sort();
 
-  return weekdays === weekend ? (
-    <div>{weekdays}</div>
+const formatWeekdays = (weekDays: string) =>
+  weekDays
+    .replace('א, ב, ג, ד, ה', 'א-ה')
+    .replace('א, ב, ג, ד', 'א-ד')
+    .replace('א, ב, ג', 'א-ג')
+    .replace('ב, ג, ד, ה', 'ב-ה')
+    .replace('ב, ג, ד', 'ב-ד')
+    .replace('ג, ד, ה', 'ג-ה');
+
+function formatHours(
+  sOrT: Pick<Student | Teacher, 'weekendHours' | 'weekDaysHours' | 'days'>
+) {
+  const daysList = formatDays(sOrT.days);
+  const weekendDays = daysList.filter(d => d === 'ש' || d === 'ו');
+  const weekDays = daysList.filter(d => d !== 'ש' && d !== 'ו');
+  const weekdaysHours = formatHour(sOrT.weekDaysHours);
+  const weekendHours = formatHour(sOrT.weekendHours);
+
+  return daysList.length === 7 && weekdaysHours === weekendHours ? (
+    <div>{weekdaysHours}</div>
   ) : (
     <>
-      <div>{weekdays && 'א-ה: ' + weekdays}</div>
-      <div>{weekend && 'סופ"ש: ' + weekend}</div>
+      <div>
+        {weekDays.length > 0 &&
+          `${formatWeekdays(weekDays.join(', '))}: ${weekdaysHours}`}
+      </div>
+      <div>
+        {weekendDays.length > 0 && `${weekendDays.join(', ')}: ${weekendHours}`}
+      </div>
     </>
   );
 }
@@ -236,6 +262,11 @@ export default function Index() {
   const [showOpeningCallModal, toggleShowOpeningCallModal] = useToggle();
   const [openingCallDetails, setOpeningCallDetails] = useState<Teacher>();
   const [openingCallInsights, setOpeningCallInsights] = useState('');
+  const [showMatchForm, toggleShowMatchForm] = useToggle();
+  const [matchFormDetails, setMatchFormDetails] = useState<{
+    teacher: Teacher;
+    student: Student;
+  }>();
 
   useEffect(() => {
     if (teachers) {
@@ -304,6 +335,7 @@ export default function Index() {
         if (isAboutModalOpen) toggleAboutModalOpen();
         if (isTeachersListModalOpen) toggleTeachersListModalOpen();
         if (showOpeningCallModal) toggleShowOpeningCallModal();
+        if (showMatchForm) toggleShowMatchForm();
       }
     };
 
@@ -312,8 +344,10 @@ export default function Index() {
   }, [
     isAboutModalOpen,
     isTeachersListModalOpen,
+    showMatchForm,
     showOpeningCallModal,
     toggleAboutModalOpen,
+    toggleShowMatchForm,
     toggleShowOpeningCallModal,
     toggleTeachersListModalOpen,
   ]);
@@ -367,50 +401,24 @@ export default function Index() {
     );
   }
 
-  // function assignTeacher(e: MouseEvent, t: Teacher, assignValue: string) {
-  //   e.stopPropagation();
-  //   e.preventDefault();
-  //   teacherFetcher.submit(
-  //     { methodName: 'assignTeacher', teacherIndex: t.index, assignValue },
-  //     { method: 'POST' }
-  //   );
-  // }
-
-  function assignStudent(e: MouseEvent, s: Student, assignValue: string) {
+  function assignStudent(
+    e: MouseEvent,
+    teacher: Teacher,
+    student: Student,
+    subject: string | null
+  ) {
     e.stopPropagation();
     e.preventDefault();
     studentFetcher.submit(
       {
         methodName: 'assignStudent',
-        studentIndex: s.index,
-        studentCity: s.city,
-        assignValue,
+        studentIndex: student.index,
+        studentCity: student.city,
+        teacherIndex: teacher.index,
+        matchSubject: subject,
       },
       { method: 'POST' }
     );
-
-    const origValue = studentFirstAttachedTeacher(s) || '';
-    const cancelFn = () => assignStudent(e, s, origValue);
-    if (isStudentAssigned(s)) {
-      setStudentAssignToast(
-        <div className="toast">
-          השיבוץ של {s.name} ל{selectedTeacher?.name} בוטל בהצלחה.{' '}
-          <a href={'#re-assign'} onClick={cancelFn}>
-            שבץ מחדש
-          </a>
-        </div>
-      );
-    } else if (assignValue && assignValue !== Available) {
-      setStudentAssignToast(
-        <div className="toast">
-          {s.name} שובץ בהצלחה ל{selectedTeacher?.name}
-          <a href={'#re-assign'} onClick={cancelFn}>
-            בטל
-          </a>
-        </div>
-      );
-    }
-    // s.teacher = assignValue;
   }
 
   return (
@@ -496,17 +504,22 @@ export default function Index() {
                           <div className="leftBottom">
                             <div className="status">
                               <span>{teacherStatus(t)}</span>
-                              <a
-                                href={'#editOpeningCall'}
-                                onClick={e => {
-                                  e.preventDefault();
-                                  setOpeningCallDetails(t);
-                                  setOpeningCallInsights(t.openingCallInsights);
-                                  toggleShowOpeningCallModal();
-                                }}
-                              >
-                                <img alt="שבץ" src="/edit.svg" />
-                              </a>
+                              {!isTeacherAssigned(t) && (
+                                <a
+                                  href={'#editOpeningCall'}
+                                  onClick={e => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setOpeningCallDetails(t);
+                                    setOpeningCallInsights(
+                                      t.openingCallInsights
+                                    );
+                                    toggleShowOpeningCallModal();
+                                  }}
+                                >
+                                  <img alt="שבץ" src="/edit.svg" />
+                                </a>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -585,53 +598,20 @@ export default function Index() {
                         {isStudentFetcherIdle ? (
                           <>
                             <div className="status">
-                              {isStudentAssigned(s)
-                                ? `משובץ ל${studentFirstAttachedTeacher(s)}`
-                                : isStudentAvailable(s)
-                                ? 'זמין'
-                                : 'לא זמין'}
-                            </div>
-                            <div>
-                              {!isStudentAssigned(s) && (
-                                <div>
-                                  {isStudentAvailable(s) ? (
-                                    <a
-                                      href={'#markAsAvailable'}
-                                      onClick={e => assignStudent(e, s, '')}
-                                    >
-                                      סמן כלא זמין
-                                    </a>
-                                  ) : (
-                                    <a
-                                      href={'#markAsUnavailable'}
-                                      onClick={e =>
-                                        assignStudent(e, s, Available)
-                                      }
-                                    >
-                                      סמן כזמין
-                                    </a>
-                                  )}
-                                </div>
-                              )}
-                              <div>
-                                {isStudentAssigned(s) ? (
-                                  <a
-                                    href={'#unassignStudent'}
-                                    onClick={e => assignStudent(e, s, '')}
-                                  >
-                                    בטל שיבוץ ל{studentFirstAttachedTeacher(s)}
-                                  </a>
-                                ) : (
-                                  <a
-                                    href={'#assignStudent'}
-                                    onClick={e =>
-                                      assignStudent(e, s, selectedTeacher!.name)
-                                    }
-                                  >
-                                    שבץ ל{selectedTeacher?.name}
-                                  </a>
-                                )}
-                              </div>
+                              <a
+                                href={'#matchForm'}
+                                onClick={e => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setMatchFormDetails({
+                                    teacher: selectedTeacher as Teacher,
+                                    student: s,
+                                  });
+                                  toggleShowMatchForm();
+                                }}
+                              >
+                                <img alt="בטל שיבוץ" src="/friends.svg" />
+                              </a>
                             </div>
                           </>
                         ) : (
@@ -801,6 +781,47 @@ export default function Index() {
               <button className="submit">עדכן שיחת פתיחה</button>
             </Form>
             <button onClick={toggleShowOpeningCallModal}>ביטול</button>
+          </div>
+        </div>
+      </div>
+      <div className={`match-form modal ${showMatchForm ? 'open' : ''}`}>
+        <CloseButton onClick={toggleShowMatchForm} />
+        <div className="content">
+          <h2>שיבוץ מורה לתלמיד</h2>
+          <label>
+            <div>
+              ביצעתי שיחת פתיחה עם{' '}
+              <span className="name">{openingCallDetails?.name}</span> ואלה
+              התובנות:
+            </div>
+            <div>
+              <textarea
+                defaultValue={openingCallInsights}
+                onChange={e => setOpeningCallInsights(e.target.value)}
+              />
+            </div>
+          </label>
+          <div className="buttons">
+            <Form
+              method="post"
+              action={`/action`}
+              onSubmit={e => {
+                if (!matchFormDetails) {
+                  return;
+                }
+
+                // assignStudent(
+                //   e,
+                //   openingCallDetails.index,
+                //   openingCallInsights,
+                //   userName
+                // );
+                toggleShowOpeningCallModal();
+              }}
+            >
+              <button className="submit">עדכן שיחת פתיחה</button>
+            </Form>
+            <button onClick={toggleShowMatchForm}>ביטול</button>
           </div>
         </div>
       </div>
